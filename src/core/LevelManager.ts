@@ -1,11 +1,5 @@
 import { Game } from "./Game";
-
-// 定义关卡接口（保持不变）
-export interface Level {
-  onEnter(game: Game): void;
-  onUpdate(delta: number): void;
-  onExit(): void;
-}
+import type { Level } from "../types";
 
 export class LevelManager {
   private game: Game;
@@ -41,5 +35,5 @@ export class LevelManager {
       this.currentLevel.onUpdate(delta);
     }
   }
-  
+
 }

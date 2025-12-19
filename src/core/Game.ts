@@ -4,7 +4,6 @@ import { Scene } from "../scene/Scene";
 import { LevelManager } from "./LevelManager";
 import type { Renderer } from "../renderer/Renderer"; // 使用 type 避免运行时依赖
 import type { AssetLoader } from "./AssetLoader";
-import type { Level } from "../types"; // 假设 Level 接口定义在 types/index.ts
 
 export class Game {
   // --- 核心系统 ---

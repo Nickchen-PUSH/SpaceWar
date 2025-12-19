@@ -1,8 +1,7 @@
 import { Game } from "./core/Game";
 import { AssetLoader } from "./core/AssetLoader";
-import { ThreeRenderer } from "./renderer/ThreeRenderer";
-import { SpaceLevel } from "./game/levels/SpaceLevel";
-
+import { TextRenderer } from "./renderer";
+import { entryLevel } from "./game/levels/entryLevel";
 /**
  * 游戏入口函数
  * 负责整个应用的生命周期初始化
@@ -27,7 +26,7 @@ async function bootstrap() {
   loader.onProgress = (progress: number) => {
     const percentage = Math.round(progress * 100);
     console.log(`[Loading] ${percentage}%`);
-    
+
     // 如果你有 loading DOM 元素：
     // document.getElementById('loading-bar')!.style.width = `${percentage}%`;
   };
@@ -45,9 +44,9 @@ async function bootstrap() {
   // ===========================================
   // 2. 组装引擎 (Assemble Engine)
   // ===========================================
-  
+
   // 2.1 创建具体的渲染器 (Three.js 实现)
-  const renderer = new ThreeRenderer();
+  const renderer = new TextRenderer();
 
   // 2.2 创建核心引擎，注入渲染器和已加载的资源
   const game = new Game(renderer, loader);
@@ -64,25 +63,25 @@ async function bootstrap() {
   // ===========================================
   // 3. 注入游戏逻辑 (Inject Game Logic)
   // ===========================================
-  
+
   // 创建第一关 (太空战斗)
-  const startLevel = new SpaceLevel();
+  const startLevel = new entryLevel();
 
   // 告诉关卡管理器：请切换到这一关
-  // 这会触发 SpaceLevel.onEnter()，里面会生成飞船和敌人
+  // 这会触发 entryLevel.onEnter()，里面会生成飞船和敌人
   game.levelManager.changeLevel(startLevel);
 
   // ===========================================
   // 4. 点火发射 (Ignition)
   // ===========================================
-  
+
   // 移除 Loading 界面 (如果有的话)
   const loadingScreen = document.getElementById('loading-screen');
   if (loadingScreen) loadingScreen.style.display = 'none';
 
   // 启动主循环
   game.start();
-  
+
   // (可选) 暴露给 window 用于控制台调试
   (window as any).game = game;
 }
