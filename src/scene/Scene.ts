@@ -8,9 +8,9 @@ export class Scene {
 
   /**
    * 场景的主摄像机
-   * 它是场景唯一的观察者
+   * 它现在是一个实体，可以被移动和操作
    */
-  public camera: Camera;
+  public mainCamera: Camera;
 
   /**
    * 所有的游戏实体 (飞船、子弹、陨石)
@@ -29,9 +29,8 @@ export class Scene {
   private pendingRemove: Set<string> = new Set();
 
   constructor() {
-    // 初始化相机，默认全屏
-    // 具体的宽高后续会被 Game.onResize 修正
-    this.camera = new Camera(window.innerWidth, window.innerHeight);
+    // 每个场景都带有一个默认的相机实体
+    this.mainCamera = new Camera();
   }
 
   // =============================
@@ -43,19 +42,22 @@ export class Scene {
    * @param delta 上一帧的时间间隔(秒)
    */
   public update(delta: number) {
-    // 1. 处理本帧新增的实体 (避免在遍历过程中修改数组)
+    // 1. 更新相机实体
+    this.mainCamera.update(delta);
+    
+    // 2. 处理本帧新增的实体 (避免在遍历过程中修改数组)
     if (this.pendingAdd.length > 0) {
       this.entities.push(...this.pendingAdd);
       this.pendingAdd = [];
     }
 
-    // 2. 处理本帧移除的实体
+    // 3. 处理本帧移除的实体
     if (this.pendingRemove.size > 0) {
       this.entities = this.entities.filter(e => !this.pendingRemove.has(e.id));
       this.pendingRemove.clear();
     }
 
-    // 3. 更新所有实体的逻辑
+    // 4. 更新所有实体的逻辑
     // 使用倒序遍历也是一种防止移除时索引错乱的常用技巧，但这里我们用 filter 统一处理了
     for (const entity of this.entities) {
       if (entity.active) {
@@ -94,5 +96,7 @@ export class Scene {
     this.entities = [];
     this.pendingAdd = [];
     this.pendingRemove.clear();
+    // Also reset the camera to a fresh one
+    this.mainCamera = new Camera();
   }
 }

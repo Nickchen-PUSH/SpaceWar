@@ -32,7 +32,7 @@ export class LevelManager {
    */
   public update(delta: number) {
     if (this.currentLevel) {
-      this.currentLevel.onUpdate(delta);
+      this.currentLevel.onUpdate(this.game, delta); // Pass game instance here
     }
   }
 

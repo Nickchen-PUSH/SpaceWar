@@ -1,17 +1,44 @@
+import { Vector3 } from "three";
 import type { Level } from "../../types";
+import type { Game } from "../../core/Game";
+import { RotatingShip } from "../entities/RotatingShip";
 
 export class entryLevel implements Level {
-    onEnter(game: any): void {
-        console.log("Entering Entry Level");
-        // 初始化关卡内容，例如创建实体、设置场景等
-    }
+  private cameraOrbitRadius: number = 50;
+  private cameraOrbitSpeed: number = 0.5;
 
-    onUpdate(delta: number): void {
-        // 每帧更新关卡逻辑
-    }
+  onEnter(game: Game): void {
+    console.log("Entering Entry Level");
+    const scene = game.getScene();
 
-    onExit(): void {
-        console.log("Exiting Entry Level");
-        // 清理关卡内容，例如销毁实体、释放资源等
-    }
+    // Set the initial camera position and orientation for this level
+    scene.mainCamera.position.x = 0;
+    scene.mainCamera.position.y = 20;
+    scene.mainCamera.position.z = this.cameraOrbitRadius;
+    scene.mainCamera.lookAt(new Vector3(0, 0, 0)); // Look at the origin
+
+    // Create and add the player's ship
+    const ship = new RotatingShip();
+    ship.name = "playerShip";
+    ship.meshConfig = {
+      geometryId: "spaceship"
+    };
+
+    scene.add(ship);
+  }
+
+  onExit(): void {
+    console.log("Exiting Entry Level");
+  }
+
+  onUpdate(game: Game, delta: number): void {
+    const scene = game.getScene();
+    const time = game.getTime();
+    
+    // Calculate new position for orbiting camera
+    const angle = time.elapsed * this.cameraOrbitSpeed;
+    scene.mainCamera.position.x = Math.sin(angle) * this.cameraOrbitRadius;
+    scene.mainCamera.position.z = Math.cos(angle) * this.cameraOrbitRadius;
+    scene.mainCamera.lookAt(new Vector3(0, 0, 0)); // Always look at the ship at the origin
+  }
 }

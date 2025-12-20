@@ -74,7 +74,7 @@ export class Game {
     window.addEventListener("resize", this.onResize);
     
     // 5. 初始触发一次 Resize 确保画面正确
-    this.onResize();
+    setTimeout(() => this.onResize(), 0);
   }
 
   /**
@@ -158,7 +158,7 @@ export class Game {
     this.renderer.resize(width, height);
 
     // 2. 通知场景里的相机调整宽高比 (Aspect Ratio)
-    this.scene.camera.resize(width, height);
+    this.scene.mainCamera.resize(width, height);
   };
 
   // =========================================

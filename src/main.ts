@@ -1,6 +1,7 @@
+import './style.css';
 import { Game } from "./core/Game";
 import { AssetLoader } from "./core/AssetLoader";
-import { TextRenderer } from "./renderer";
+import { ThreeRenderer } from "./renderer";
 import { entryLevel } from "./game/levels/entryLevel";
 /**
  * 游戏入口函数
@@ -16,11 +17,7 @@ async function bootstrap() {
 
   // 注册资源清单
   // 在实际项目中，这些路径通常指向 public/assets 文件夹
-  loader.add("game_config", "/assets/data/config.json", "json");
-  loader.add("ship_model", "/assets/models/player.glb", "buffer");
-  loader.add("ship_texture", "/assets/textures/player_diffuse.png", "image");
-  loader.add("enemy_texture", "/assets/textures/enemy_alien.png", "image");
-  loader.add("bg_music", "/assets/audio/space_theme.mp3", "buffer");
+  loader.add("spaceship", "/UltimateSpaceships/Challenger/glTF/Challenger.gltf", "buffer");
 
   // 设置加载进度回调 (可以在这里更新 DOM 里的进度条)
   loader.onProgress = (progress: number) => {
@@ -46,7 +43,7 @@ async function bootstrap() {
   // ===========================================
 
   // 2.1 创建具体的渲染器 (Three.js 实现)
-  const renderer = new TextRenderer();
+  const renderer = new ThreeRenderer();
 
   // 2.2 创建核心引擎，注入渲染器和已加载的资源
   const game = new Game(renderer, loader);
