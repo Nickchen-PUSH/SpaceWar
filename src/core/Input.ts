@@ -1,3 +1,5 @@
+import { Debug, LogChannel } from "./Debug";
+
 export class Input {
     // --- 内部状态容器 ---
 
@@ -11,6 +13,10 @@ export class Input {
     private keysUp: Set<string> = new Set();
 
     // 鼠标状态
+    private lastMouseX: number = 0;
+    private lastMouseY: number = 0;
+    private deltaX: number = 0;
+    private deltaY: number = 0;
     private mouseX: number = 0;
     private mouseY: number = 0;
     // 鼠标按钮: 0=左键, 1=中键, 2=右键
@@ -60,6 +66,8 @@ export class Input {
         this.keysDown.clear();
         this.keysUp.clear();
         this.mouseButtonsDown.clear();
+        this.deltaX = 0;
+        this.deltaY = 0;
     }
 
     // =========================================
@@ -112,6 +120,13 @@ export class Input {
     }
 
     /**
+     * 获取本帧鼠标移动的增量 (用于旋转视角)
+     */
+    getMouseDelta() {
+        return { x: this.deltaX, y: this.deltaY };
+    }
+
+    /**
      * [高级辅助] 获取轴输入 (-1 到 1)
      * 极大简化移动逻辑
      * @example input.getAxis("KeyA", "KeyD") // 按A返-1, 按D返1, 都不按返0
@@ -142,25 +157,38 @@ export class Input {
         // event.key 对应字符 (如 "w", "W")，受输入法影响，不推荐用于游戏控制
         this.keysCurrent.add(event.code);
         this.keysDown.add(event.code);
+
+        Debug.log(LogChannel.Input, `Key Down: ${event.code}`);
     };
 
     private onKeyUp = (event: KeyboardEvent) => {
         this.keysCurrent.delete(event.code);
         this.keysUp.add(event.code);
+
+        Debug.log(LogChannel.Input, `Key Up: ${event.code}`);
     };
 
     private onMouseMove = (event: MouseEvent) => {
         // 简单的记录 clientX/Y，这是相对于浏览器视口的
+        this.deltaX = event.movementX ?? (event.clientX - this.lastMouseX);
+        this.deltaY = event.movementY ?? (event.clientY - this.lastMouseY);
+        
+        this.lastMouseX = event.clientX;
+        this.lastMouseY = event.clientY;
         this.mouseX = event.clientX;
         this.mouseY = event.clientY;
+
+        Debug.log(LogChannel.Input, `Mouse Move: deltaX=${this.deltaX}, deltaY=${this.deltaY}`);
     };
 
     private onMouseDown = (event: MouseEvent) => {
         this.mouseButtonsCurrent.add(event.button);
         this.mouseButtonsDown.add(event.button);
+        Debug.log(LogChannel.Input, `Mouse Button Down: ${event.button}`);
     };
 
     private onMouseUp = (event: MouseEvent) => {
         this.mouseButtonsCurrent.delete(event.button);
+        Debug.log(LogChannel.Input, `Mouse Button Up: ${event.button}`);
     };
 }
