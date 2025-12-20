@@ -30,9 +30,9 @@ describe('Time System', () => {
   it('should support time scale (slow motion)', () => {
     time.timeScale = 0.5; // 半速
     time.update(1000);
-    time.update(2000); // 实际过了1秒
+    time.update(1100); // 实际过了0.1秒
     
-    // 逻辑上应该只过了0.5秒
-    expect(time.delta).toBe(0.5);
+    // 逻辑上应该只过了0.05秒
+    expect(time.delta).toBe(0.05);
   });
 });
