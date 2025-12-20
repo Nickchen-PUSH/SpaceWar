@@ -1,6 +1,6 @@
 import { Entity } from "../../scene/Entity";
 
-export class RotatingShip extends Entity {
+export class Challenger extends Entity {
   private turnSpeed: number; // Radians per second
   private rollSpeed: number; // Radians per second
 

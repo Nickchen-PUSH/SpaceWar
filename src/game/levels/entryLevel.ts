@@ -1,6 +1,6 @@
 import type { Level } from "../../types";
 import type { Game } from "@core/Game";
-import { RotatingShip } from "../entities/RotatingShip";
+import { Challenger } from "../ships/Challenger";
 import { FreeCameraController } from "../FreeCameraController";
 import { vec3 } from "gl-matrix";
 
@@ -20,7 +20,7 @@ export class entryLevel implements Level {
     scene.mainCamera.lookAt(vec3.fromValues(0, 0, 0)); // Look at the origin
 
     // Create and add the player's ship
-    const ship = new RotatingShip();
+    const ship = new Challenger();
     ship.position[0] = 0;
     ship.position[1] = 0;
     ship.position[2] = 0;
