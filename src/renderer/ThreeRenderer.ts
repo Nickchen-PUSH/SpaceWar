@@ -4,6 +4,7 @@ import { AssetLoader } from "../core/AssetLoader";
 import { Scene } from "../scene/Scene";
 import type { Renderer } from "./Renderer";
 import { Entity } from "../scene/Entity";
+import { Debug, LogChannel } from "../core/Debug";
 
 export class ThreeRenderer implements Renderer {
   private webglRenderer: THREE.WebGLRenderer;
@@ -14,7 +15,12 @@ export class ThreeRenderer implements Renderer {
   private models: Map<string, THREE.Group> = new Map();
   private gltfLoader = new GLTFLoader();
 
-  constructor() {}
+  constructor() {
+    this.webglRenderer = null!;
+    this.threeScene = null!;
+    this.camera = null!;
+    this.container = null!;
+  }
 
   public async initAssets(loader: AssetLoader) {
     const modelAsset = loader.get<ArrayBuffer>("spaceship");
@@ -63,8 +69,8 @@ export class ThreeRenderer implements Renderer {
     this.camera.updateProjectionMatrix();
 
     // 2. Sync transform (position and rotation)
-    this.camera.position.copy(mainCamera.position);
-    this.camera.quaternion.copy(mainCamera.rotation);
+    this.camera.position.fromArray(mainCamera.position);
+    this.camera.quaternion.fromArray(mainCamera.rotation);
     // =====================================================
 
     scene.entities.forEach((entity) => {
@@ -72,15 +78,24 @@ export class ThreeRenderer implements Renderer {
     });
 
     // === Debugging Logs ===
-    console.group("Renderer Debug Info");
-    console.log("Renderer Camera Position:", this.camera.position);
-    console.log("Renderer Camera Quaternion:", this.camera.quaternion);
+    // console.group("Renderer Debug Info");
+    // console.debug("Renderer Camera Position:", this.camera.position);
+    // console.debug("Renderer Camera Quaternion:", this.camera.quaternion);
+    // if (scene.entities.length > 0) {
+    //   console.debug("First Entity Position:", scene.entities[0].position);
+    // } else {
+    //   console.debug("No entities in scene.");
+    // }
+    // console.groupEnd();
+    Debug.log(LogChannel.Rendering, "Rendered a frame");
+    Debug.log(LogChannel.Rendering, `Camera Pos: ${this.camera.position.toArray().map(v => v.toFixed(2)).join(", ")}`);
+    Debug.log(LogChannel.Rendering, `Camera Rot: ${this.camera.quaternion.toArray().map(v => v.toFixed(2)).join(", ")}`);
     if (scene.entities.length > 0) {
-      console.log("First Entity Position:", scene.entities[0].position);
+      Debug.log(LogChannel.Rendering, `First Entity Pos: ${scene.entities[0].position}`);
     } else {
-      console.log("No entities in scene.");
+      Debug.log(LogChannel.Rendering, "No entities in scene.");
     }
-    console.groupEnd();
+
     // ======================
 
     this.webglRenderer.render(this.threeScene, this.camera);
@@ -102,9 +117,9 @@ export class ThreeRenderer implements Renderer {
     }
     
     if (object3d) {
-      object3d.position.copy(entity.position);
-      object3d.quaternion.copy(entity.rotation);
-      object3d.scale.copy(entity.scale);
+      object3d.position.fromArray(entity.position);
+      object3d.quaternion.fromArray(entity.rotation);
+      object3d.scale.fromArray(entity.scale);
     }
   }
 
