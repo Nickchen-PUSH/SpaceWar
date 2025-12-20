@@ -1,5 +1,3 @@
-import type { Vector3 } from "../types"; // 假设我们在 types/index.ts 定义了 Vector3
-
 import { Entity } from "./Entity";
 
 /**
@@ -8,6 +6,14 @@ import { Entity } from "./Entity";
  * allowing it to be moved and manipulated like any other game object.
  */
 export class Camera extends Entity {
+  /*
+  * Camera projection properties
+  * @property {number} fov - Field of view in degrees.
+  * @property {number} aspect - Aspect ratio (width / height).
+  * @property {number} near - Near clipping plane distance.
+  * @property {number} far - Far clipping plane distance.
+  */
+
   public fov: number;
   public aspect: number;
   public near: number;
