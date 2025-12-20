@@ -1,32 +1,35 @@
-import * as THREE from "three";
 import { Entity } from "../../scene/Entity";
 
 export class RotatingShip extends Entity {
-  private threeQuaternion = new THREE.Quaternion();
-  private axisOfRotation = new THREE.Vector3(0, 1, 0);
+  private turnSpeed: number; // Radians per second
+  private rollSpeed: number; // Radians per second
 
-  constructor() {
-    super(); // The base Entity class now auto-generates an ID
+  constructor(turnSpeed: number = Math.PI / 2, rollSpeed: number = Math.PI) {
+    super();
+    this.turnSpeed = turnSpeed;
+    this.rollSpeed = rollSpeed;
   }
 
-  update(delta: number): void {
-    // Original rotation logic, commented out to make the ship stationary
-    // // Convert our plain quaternion to a THREE.Quaternion
-    // this.threeQuaternion.set(this.rotation.x, this.rotation.y, this.rotation.z, this.rotation.w);
+  public update(deltaTime: number): void {
+    // Rotate around Y axis (turning)
+    // this.rotateY(this.turnSpeed * deltaTime);
+    // Rotate around Z axis (rolling)
+    // this.rotateZ(this.rollSpeed * deltaTime);
+  }
 
-    // // Create a delta rotation
-    // const deltaRotation = new THREE.Quaternion();
-    // deltaRotation.setFromAxisAngle(this.axisOfRotation, delta * 1.0);
+  public getTurnSpeed(): number {
+    return this.turnSpeed;
+  }
 
-    // // Apply the delta rotation
-    // this.threeQuaternion.multiply(deltaRotation);
+  public getRollSpeed(): number {
+    return this.rollSpeed;
+  }
 
-    // // Convert back to our plain object
-    // this.rotation.x = this.threeQuaternion.x;
-    // this.rotation.y = this.threeQuaternion.y;
-    // this.rotation.z = this.threeQuaternion.z;
-    // this.rotation.w = this.threeQuaternion.w;
+  public setTurnSpeed(speed: number): void {
+    this.turnSpeed = speed;
+  }
 
-    super.update(delta);
+  public setRollSpeed(speed: number): void {
+    this.rollSpeed = speed;
   }
 }
