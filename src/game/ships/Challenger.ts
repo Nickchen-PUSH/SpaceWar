@@ -1,35 +1,26 @@
+import type { CameraView } from "@game/cameracontrollers";
 import { Ship } from "./Ship";
+import { vec3 } from "gl-matrix";
 
 export class Challenger extends Ship {
-  private turnSpeed: number; // Radians per second
-  private rollSpeed: number; // Radians per second
+    protected maxSpeed: number = 150;
+    protected acceleration: number = 50;
+    protected turnSpeed: number = 1.0;
 
-  constructor(turnSpeed: number = Math.PI / 2, rollSpeed: number = Math.PI) {
-    super();
-    this.turnSpeed = turnSpeed;
-    this.rollSpeed = rollSpeed;
-  }
+    protected cameraView: CameraView ={
+            cockpitOffset: vec3.fromValues(0, 1, 3),
+            firstPersonPitchDown: 0.1,
+            thirdPersonOffset: vec3.fromValues(0, 3, -8),
+            thirdPersonPitchDown: 0.2
+        }
 
-  public update(deltaTime: number): void {
-    // Rotate around Y axis (turning)
-    // this.rotateY(this.turnSpeed * deltaTime);
-    // Rotate around Z axis (rolling)
-    // this.rotateZ(this.rollSpeed * deltaTime);
-  }
+    constructor() {
+        super("Challenger", {
+            geometryId: 'ship_challenger_v1'
+        });
+    }
 
-  public getTurnSpeed(): number {
-    return this.turnSpeed;
-  }
-
-  public getRollSpeed(): number {
-    return this.rollSpeed;
-  }
-
-  public setTurnSpeed(speed: number): void {
-    this.turnSpeed = speed;
-  }
-
-  public setRollSpeed(speed: number): void {
-    this.rollSpeed = speed;
-  }
+    protected onUpdate(delta: number): void {
+        // 这里可以添加 Challenger 特有的更新逻辑
+    }
 }

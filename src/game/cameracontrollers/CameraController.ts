@@ -25,12 +25,12 @@ export type CameraMode = typeof CameraMode[keyof typeof CameraMode];
 export class CameraController extends Entity {
   private camera: Camera;
   private game: Game;
-  private target: Entity; // 跟随目标（如飞船）
+  private target: Ship; // 跟随目标（如飞船）
 
   public mode: CameraMode = CameraMode.ThirdPerson;
 
 
-  constructor(game: Game, camera: Camera, target: Entity) {
+  constructor(game: Game, camera: Camera, target: Ship) {
     super();
     this.game = game;
     this.camera = camera;
@@ -40,7 +40,7 @@ export class CameraController extends Entity {
   update(delta: number) {
     const input = this.game.getInput();
 
-    if (input.getKeyDown("ControlLeft")) {
+    if (input.getKeyDown("KeyV")) {
       this.mode =
         this.mode === CameraMode.FirstPerson
           ? CameraMode.ThirdPerson
@@ -52,8 +52,8 @@ export class CameraController extends Entity {
     // 获取锚点
     const offset =
       this.mode === CameraMode.FirstPerson
-        ? this.target.cockpitOffset
-        : this.target.thirdPersonOffset;
+        ? this.target.getCameraViewConfig().cockpitOffset
+        : this.target.getCameraViewConfig().thirdPersonOffset;
 
     // 计算相机世界位置：target.position + (target.rotation * offset)
     const worldOffset = vec3.create();
@@ -66,13 +66,13 @@ export class CameraController extends Entity {
     quat.rotateY(this.camera.rotation, this.camera.rotation, Math.PI);
 
     // （可选）第一人称略微向上仰视一点
-    if (this.mode === CameraMode.FirstPerson && this.target.firstPersonPitchDown !== 0) {
-      quat.rotateX(this.camera.rotation, this.camera.rotation, -this.target.firstPersonPitchDown);
+    if (this.mode === CameraMode.FirstPerson && this.target.getCameraViewConfig().firstPersonPitchDown !== 0) {
+      quat.rotateX(this.camera.rotation, this.camera.rotation, -this.target.getCameraViewConfig().firstPersonPitchDown);
     }
 
     // （可选）第三人称略微向下俯视一点
-    if (this.mode === CameraMode.ThirdPerson && this.target.thirdPersonPitchDown !== 0) {
-      quat.rotateX(this.camera.rotation, this.camera.rotation, -this.target.thirdPersonPitchDown);
+    if (this.mode === CameraMode.ThirdPerson && this.target.getCameraViewConfig().thirdPersonPitchDown !== 0) {
+      quat.rotateX(this.camera.rotation, this.camera.rotation, -this.target.getCameraViewConfig().thirdPersonPitchDown);
     }
   }
 }

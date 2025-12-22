@@ -49,6 +49,13 @@ export class Entity {
     Debug.log(LogChannel.System, `New rotation quaternion: ${this.rotation}`);
   }
 
+  public getFront(): vec3 {
+    const front = vec3.fromValues(0, 0, -1);
+    vec3.transformQuat(front, front, this.rotation);
+    vec3.normalize(front, front);
+    return front;
+  }
+
   public rotateX(rad: number) {
     // quat.rotateX 的逻辑是: out = a * rotX
     // 对于四元数，右乘表示 "在当前姿态基础上，叠加一个局部旋转"

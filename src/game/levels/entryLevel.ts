@@ -1,9 +1,9 @@
 import type { Level } from "./level";
 import type { Game } from "@core/Game";
-import { Ship } from "../ships/Ship";
 import { FreeCameraController } from "../cameracontrollers/FreeCameraController";
 import { CameraController } from "../cameracontrollers/CameraController";
 import { vec3 } from "gl-matrix";
+import { Challenger } from "../../game/ships/Challenger";
 
 export class entryLevel implements Level {
 
@@ -24,21 +24,13 @@ export class entryLevel implements Level {
 
 
     // Create and add the player's ship
-    const ship = new Ship();
-    ship.position[0] = 0;
-    ship.position[1] = 0;
-    ship.position[2] = 0;
-    ship.name = "playerShip";
-    ship.meshConfig = {
-      geometryId: "spaceship"
-    };
+    const challenger = new Challenger();
 
-    scene.add(ship);
+    scene.add(challenger);
 
     // Set up the free camera controller
     // const cameraController = new FreeCameraController(game, scene.mainCamera);
-    const cameraController = new CameraController(game, scene.mainCamera, ship);
-
+    const cameraController = new CameraController(game, scene.mainCamera, challenger);
     scene.add(cameraController);
 
   }

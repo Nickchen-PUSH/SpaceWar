@@ -85,11 +85,10 @@ export class FreeCameraController extends Entity {
         if (input.getKey("KeyA") || input.getKey("ArrowLeft")) vec3.add(moveDir, moveDir, [-1, 0, 0]);
         if (input.getKey("KeyD") || input.getKey("ArrowRight")) vec3.add(moveDir, moveDir, [1, 0, 0]);
 
-        // Q/E - 垂直升降 (沿着世界 Y 轴，像电梯一样)
-        // 这比沿着相机 Y 轴飞更符合 Inspector 的习惯
+        // Space/Ctrl - 上下 (沿着世界上方向)
         const worldUp = vec3.fromValues(0, 1, 0);
-        if (input.getKey("KeyE") || input.getKey("Space")) vec3.scaleAndAdd(this.camera.position, this.camera.position, worldUp, currentSpeed);
-        if (input.getKey("KeyQ") || input.getKey("ControlLeft")) vec3.scaleAndAdd(this.camera.position, this.camera.position, worldUp, -currentSpeed);
+        if (input.getKey("Space")) vec3.scaleAndAdd(this.camera.position, this.camera.position, worldUp, currentSpeed);
+        if (input.getKey("ControlLeft")) vec3.scaleAndAdd(this.camera.position, this.camera.position, worldUp, -currentSpeed);
 
         // 3. 应用水平移动
         // 需要把本地的 moveDir 变换到世界空间，但忽略 Y 轴分量? 
