@@ -3,31 +3,30 @@ import { Game } from "../core/Game";
 import { Entity } from "../scene/Entity";
 import { Ship } from "./ships/Ship";
 import type { Camera } from "../scene/Camera";
-import type { Entity as SceneEntity } from "../scene/Entity";
 
 export const CameraMode = {
-    FirstPerson: 0,
-    ThirdPerson: 1
+  FirstPerson: 0,
+  ThirdPerson: 1
 } as const;
 
 export type CameraMode = typeof CameraMode[keyof typeof CameraMode];
 
 export class CameraController extends Entity {
-    private camera: Camera;
-    private game: Game;
-    private target: SceneEntity; // 跟随目标（如飞船）
+  private camera: Camera;
+  private game: Game;
+  private target: Entity; // 跟随目标（如飞船）
 
-    public mode: CameraMode = CameraMode.ThirdPerson;
-    
+  public mode: CameraMode = CameraMode.ThirdPerson;
 
-    constructor(game: Game, camera: Camera, target: SceneEntity) {
-        super();
-        this.game = game;
-        this.camera = camera;
-        this.target = target;
-    }
 
-    update(delta: number) {
+  constructor(game: Game, camera: Camera, target: Entity) {
+    super();
+    this.game = game;
+    this.camera = camera;
+    this.target = target;
+  }
+
+  update(delta: number) {
     const input = this.game.getInput();
 
     if (input.getKeyDown("ControlLeft")) {

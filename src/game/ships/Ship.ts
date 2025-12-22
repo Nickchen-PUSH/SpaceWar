@@ -1,7 +1,7 @@
 import { vec3 } from "gl-matrix";
-import { Challenger } from "./Challenger";
+import { Entity } from "../../scene";
 
-export class Ship extends Challenger {
+export class Ship extends Entity {
     // 摄像机锚点（第一人称）
     public cockpitOffset: vec3 = vec3.fromValues(0, 1.5, -1.5); 
     // 第一人称视角时，摄像机向下俯视的角度（弧度）
@@ -14,4 +14,5 @@ export class Ship extends Challenger {
     constructor() {
         super();
     }
+    
 }
