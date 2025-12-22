@@ -1,11 +1,15 @@
 import type { Level } from "./level";
 import type { Game } from "@core/Game";
 import { FreeCameraController } from "../cameracontrollers/FreeCameraController";
-import { CameraController } from "../cameracontrollers/CameraController";
+import { ShipCameraController } from "../cameracontrollers/ShipCameraController";
 import { vec3 } from "gl-matrix";
-import { Challenger } from "../../game/ships/Challenger";
+import { Challenger } from "../ships/Challenger";
+import { PlayerController } from "../gamecontrollers/PlayerController";
 
 export class entryLevel implements Level {
+
+  private cameraController!: ShipCameraController;
+  private playerController!: PlayerController;
 
   constructor() {
   }
@@ -30,9 +34,9 @@ export class entryLevel implements Level {
 
     // Set up the free camera controller
     // const cameraController = new FreeCameraController(game, scene.mainCamera);
-    const cameraController = new CameraController(game, scene.mainCamera, challenger);
-    scene.add(cameraController);
-
+    this.cameraController = new ShipCameraController(game, scene.mainCamera, challenger);
+    this.playerController = new PlayerController(game);
+    this.playerController.possess(challenger);
   }
 
   onExit(): void {
@@ -40,6 +44,7 @@ export class entryLevel implements Level {
   }
 
   onUpdate(game: Game, delta: number): void {
-
+    this.cameraController.update(delta);
+    this.playerController.update(delta);
   }
 }

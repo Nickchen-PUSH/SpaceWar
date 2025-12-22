@@ -5,7 +5,7 @@ import { Entity } from "../../scene/Entity";
 import { Debug, LogChannel } from "../../core/Debug";
 import type { Camera } from "scene";
 
-export class FreeCameraController extends Entity {
+export class FreeCameraController {
     private camera: Camera;
     private game: Game;
 
@@ -22,7 +22,6 @@ export class FreeCameraController extends Entity {
     public enabled: boolean = true;
 
     constructor(game: Game, camera: Camera) {
-        super();
         this.game = game;
         this.camera = camera;
 

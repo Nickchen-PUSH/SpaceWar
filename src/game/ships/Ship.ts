@@ -28,6 +28,28 @@ export abstract class Ship extends Entity {
     public health: number = 100;
     public shield: number = 50;
 
+    // --- 控制输入信号 (范围 -1.0 到 1.0) ---
+    // 这些变量代表了"飞行员"当前的意图
+    protected inputThrottle: number = 0; // -1(倒车) ~ 1(全速)
+    protected inputPitch: number = 0;    // -1(下) ~ 1(上)
+    protected inputYaw: number = 0;      // -1(左) ~ 1(右)
+    protected inputRoll: number = 0;     // -1(左滚) ~ 1(右滚)
+    protected isFiring: boolean = false; // 是否正在开火
+
+    /**
+     * 供 Controller 调用的指令方法
+     */
+    public setControlInput(throttle: number, pitch: number, yaw: number, roll: number) {
+        this.inputThrottle = throttle;
+        this.inputPitch = pitch;
+        this.inputYaw = yaw;
+        this.inputRoll = roll;
+    }
+
+    public setFiring(firing: boolean) {
+        this.isFiring = firing;
+    }
+
     constructor(name: string, meshConfig: MeshConfig) {
         super();
         this.name = name;
@@ -39,15 +61,35 @@ export abstract class Ship extends Entity {
      * 我们在这里处理通用的物理模拟
      */
     public update(delta: number): void {
-        // 1. 调用子类的特定逻辑（如 AI 决策或读取输入）
+        // 调用子类的特定逻辑
         this.onUpdate(delta);
 
-        // 2. 物理模拟：应用线速度
+        // 物理模拟：应用加速度
+        const forward = this.getFront();
+        const accelVec = vec3.create();
+        vec3.scale(accelVec, forward, this.inputThrottle * this.acceleration);
+        vec3.add(this.velocity, this.velocity, accelVec);
+
+        // 限制最大速度
+        const speed = vec3.length(this.velocity);
+        if (speed > this.maxSpeed) {
+            vec3.scale(this.velocity, this.velocity, this.maxSpeed / speed);
+        }
+        if (speed < 0.01) {
+            vec3.set(this.velocity, 0, 0, 0); // 防止漂移
+        }
+
+        // 应用转向输入到角速度
+        this.angularVelocity[0] += this.inputPitch * this.turnSpeed; // Pitch
+        this.angularVelocity[1] += this.inputYaw * this.turnSpeed;   // Yaw
+        this.angularVelocity[2] += this.inputRoll * this.turnSpeed;  // Roll
+
+        // 物理模拟：应用线速度
         vec3.scaleAndAdd(this.position, this.position, this.velocity, delta);
         // 应用阻力
         vec3.scale(this.velocity, this.velocity, this.drag);
 
-        // 3. 物理模拟：应用角速度（旋转）
+        // 物理模拟：应用角速度（旋转）
         if (vec3.length(this.angularVelocity) > 0.001) {
             this.rotateX(this.angularVelocity[0] * delta);
             this.rotateY(this.angularVelocity[1] * delta);

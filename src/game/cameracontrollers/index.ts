@@ -1,2 +1,2 @@
-export * from "./CameraController";
+export * from "./ShipCameraController";
 export * from "./FreeCameraController";

@@ -22,7 +22,7 @@ export type CameraView = {
 
 export type CameraMode = typeof CameraMode[keyof typeof CameraMode];
 
-export class CameraController extends Entity {
+export class ShipCameraController {
   private camera: Camera;
   private game: Game;
   private target: Ship; // 跟随目标（如飞船）
@@ -31,7 +31,6 @@ export class CameraController extends Entity {
 
 
   constructor(game: Game, camera: Camera, target: Ship) {
-    super();
     this.game = game;
     this.camera = camera;
     this.target = target;
