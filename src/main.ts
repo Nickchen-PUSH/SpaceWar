@@ -17,7 +17,9 @@ async function bootstrap() {
 
   // 注册资源清单
   // 在实际项目中，这些路径通常指向 public/assets 文件夹
-  loader.add("spaceship", "/UltimateSpaceships/Challenger/glTF/Challenger.gltf", "buffer");
+  loader.add("spaceship", "models/high_poly_x-wing_fighter.glb");
+  loader.add("sky_galaxy", "textures/environment.hdr");
+
 
   // 设置加载进度回调 (可以在这里更新 DOM 里的进度条)
   loader.onProgress = (progress: number) => {

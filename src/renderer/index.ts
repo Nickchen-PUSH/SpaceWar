@@ -1,3 +1,3 @@
 export * from "./Renderer";
-export * from "./ThreeRenderer";
+export * from "./threejs/ThreeRenderer";
 export * from "./TextRenderer";

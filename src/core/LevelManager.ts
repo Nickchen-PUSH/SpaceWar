@@ -1,5 +1,5 @@
 import { Game } from "./Game";
-import type { Level } from "../types";
+import type { Level } from "../game/levels/level";
 
 export class LevelManager {
   private game: Game;

@@ -23,16 +23,12 @@ export class Entity {
 
   // --- 3. 渲染层挂载点 (Render Proxy) ---
   public _rendererData: any = null;
+  public _hasWarnedMissingMesh: boolean = false;
 
   // --- 4. 场景图 (父子关系) ---
   public children: Entity[] = [];
   public parent: Entity | null = null;
   public scene: any | null = null; // Should be Scene but causes circular dependency
-
-  // Helper objects for calculations to avoid re-allocation
-  private static _v1: vec3 = vec3.create();
-  private static _m1: mat4 = mat4.create();
-  private static _q1: quat = quat.create();
 
   constructor() {
     this.id = crypto.randomUUID();

@@ -1,13 +1,24 @@
 import { vec3, quat } from "gl-matrix";
-import { Game } from "../core/Game";
-import { Entity } from "../scene/Entity";
-import { Ship } from "./ships/Ship";
-import type { Camera } from "../scene/Camera";
+import { Game } from "../../core/Game";
+import { Entity } from "../../scene/Entity";
+import { Ship } from "../ships/Ship";
+import type { Camera } from "../../scene/Camera";
 
 export const CameraMode = {
   FirstPerson: 0,
   ThirdPerson: 1
 } as const;
+
+export type CameraView = {
+  // 摄像机锚点（第一人称）
+  cockpitOffset: vec3
+  // 第一人称视角时，摄像机向下俯视的角度（弧度）
+  firstPersonPitchDown: number
+  // 摄像机锚点（第三人称，后上方）
+  thirdPersonOffset: vec3
+  // 第三人称视角时，摄像机向下俯视的角度（弧度）
+  thirdPersonPitchDown: number
+}
 
 export type CameraMode = typeof CameraMode[keyof typeof CameraMode];
 

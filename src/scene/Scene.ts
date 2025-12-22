@@ -18,13 +18,18 @@ export class Scene {
    */
   public entities: Entity[] = [];
 
+  /**  * 场景背景标识符 (可选)
+   * 如果不为 null，Renderer 会尝试加载对应的天空盒资源
+   */
+  public background: string | null = null;
+
   // =============================
   //  内部缓冲 (用于安全的增删)
   // =============================
-  
+
   // 等待添加的实体队列
   private pendingAdd: Entity[] = [];
-  
+
   // 等待移除的实体 ID 集合
   private pendingRemove: Set<string> = new Set();
 
@@ -44,7 +49,7 @@ export class Scene {
   public update(delta: number) {
     // 1. 更新相机实体
     this.mainCamera.update(delta);
-    
+
     // 2. 处理本帧新增的实体 (避免在遍历过程中修改数组)
     if (this.pendingAdd.length > 0) {
       this.entities.push(...this.pendingAdd);
@@ -84,7 +89,7 @@ export class Scene {
    */
   public remove(entity: Entity) {
     // 标记为不活跃，Renderer 也就不会画它了
-    entity.active = false; 
+    entity.active = false;
     // 加入移除队列，下一帧彻底从数组中删除
     this.pendingRemove.add(entity.id);
   }

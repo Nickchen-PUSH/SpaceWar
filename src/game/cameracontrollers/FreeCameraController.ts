@@ -1,8 +1,8 @@
 // src/game/FreeCameraController.ts
 import { vec3, quat } from "gl-matrix";
-import { Game } from "../core/Game";
-import { Entity } from "../scene/Entity";
-import { Debug, LogChannel } from "../core/Debug";
+import { Game } from "../../core/Game";
+import { Entity } from "../../scene/Entity";
+import { Debug, LogChannel } from "../../core/Debug";
 import type { Camera } from "scene";
 
 export class FreeCameraController extends Entity {
@@ -34,7 +34,7 @@ export class FreeCameraController extends Entity {
         this.yaw = Math.atan2(-forward[0], -forward[2]);
         this.pitch = Math.asin(Math.max(-1, Math.min(1, forward[1])));
 
-        Debug.log(LogChannel.System, `FreeCameraController initialized. Yaw: ${this.yaw}, Pitch: ${this.pitch}, camera rotation: ${this.camera.rotation}`);
+        // Debug.log(LogChannel.System, `FreeCameraController initialized. Yaw: ${this.yaw}, Pitch: ${this.pitch}, camera rotation: ${this.camera.rotation}`);
     }
 
     update(delta: number) {

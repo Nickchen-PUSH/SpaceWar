@@ -1,8 +1,8 @@
-import type { Level } from "../../types";
+import type { Level } from "./level";
 import type { Game } from "@core/Game";
 import { Ship } from "../ships/Ship";
-// import { FreeCameraController } from "../FreeCameraController";
-import { CameraController } from "../CameraController";
+import { FreeCameraController } from "../cameracontrollers/FreeCameraController";
+import { CameraController } from "../cameracontrollers/CameraController";
 import { vec3 } from "gl-matrix";
 
 export class entryLevel implements Level {
@@ -13,6 +13,8 @@ export class entryLevel implements Level {
   onEnter(game: Game): void {
     console.log("Entering Entry Level");
     const scene = game.getScene();
+
+    scene.background = "sky_galaxy";
 
     // Set the initial camera position and orientation for this level
     scene.mainCamera.position[0] = 7;
