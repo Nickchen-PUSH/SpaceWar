@@ -13,6 +13,9 @@ export abstract class Ship extends Entity {
         thirdPersonPitchDown: 0.2
     }
 
+    protected drag: number = 0.9;
+    protected angularDrag: number = 0.2;
+
     // --- 共有状态 ---
     public health: number = 100;
     public shield: number = 50;

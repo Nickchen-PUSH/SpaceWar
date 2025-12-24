@@ -41,8 +41,8 @@ export abstract class Entity {
   protected maxAngularAcceleration: vec3 = vec3.fromValues(0, 0, 0);  // [rad/s²] 每个轴的最大角加速度[pitch, yaw, roll]
 
   // --- 阻理设置 ---
-  protected drag: number = 0.95;  // 阻力系数（0.95-0.99），用于在松开按键时让飞船平滑减速。
-  protected angularDrag: number = 0.9;  // 角阻力系数
+  protected drag: number = 1;  // 阻力系数（0.95-0.99），用于在松开按键时让飞船平滑减速。
+  protected angularDrag: number = 1;  // 角阻力系数
 
   // --- 共有状态 ---
   public velocity: vec3 = vec3.create();  // [m/s] 线速度
@@ -70,7 +70,7 @@ export abstract class Entity {
   }
 
   public getFront(): vec3 {
-    const front = vec3.fromValues(0, 0, -1);
+    const front = vec3.fromValues(0, 0, 1);
     vec3.transformQuat(front, front, this.rotation);
     vec3.normalize(front, front);
     return front;

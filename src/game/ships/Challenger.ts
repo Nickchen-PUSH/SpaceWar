@@ -5,8 +5,8 @@ import { vec3 } from "gl-matrix";
 export class Challenger extends Ship {
     protected maxSpeed: number = 100;  // [m/s]
     protected maxAcceleration: number = 20;  // [m/s²]
-    protected maxAngularSpeed: number = 1.0;  // [rad/s]
-    protected maxAngularAcceleration: vec3 = vec3.fromValues(0.1, 0.1, 0.1);  // [rad/s²] 每个轴的最大角加速度[pitch, yaw, roll]
+    protected maxAngularSpeed: number = 10.0;  // [rad/s]
+    protected maxAngularAcceleration: vec3 = vec3.fromValues(10, 10, 10);  // [rad/s²] 每个轴的最大角加速度[pitch, yaw, roll]
 
 
     protected cameraView: CameraView = {
