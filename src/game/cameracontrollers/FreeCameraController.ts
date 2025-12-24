@@ -77,12 +77,16 @@ export class FreeCameraController {
         const moveDir = vec3.create();
 
         // W/S - 前后 (沿着相机朝向)
-        if (input.getKey("KeyW") || input.getKey("ArrowUp")) vec3.add(moveDir, moveDir, [0, 0, -1]);
-        if (input.getKey("KeyS") || input.getKey("ArrowDown")) vec3.add(moveDir, moveDir, [0, 0, 1]);
+        // if (input.getKey("KeyW") || input.getKey("ArrowUp")) vec3.add(moveDir, moveDir, [0, 0, -1]);
+        // if (input.getKey("KeyS") || input.getKey("ArrowDown")) vec3.add(moveDir, moveDir, [0, 0, 1]);
+        if (input.getKey("KeyI")) vec3.add(moveDir, moveDir, [0, 0, -1]);
+        if (input.getKey("KeyK")) vec3.add(moveDir, moveDir, [0, 0, 1]);
 
         // A/D - 左右 (沿着相机右向量)
-        if (input.getKey("KeyA") || input.getKey("ArrowLeft")) vec3.add(moveDir, moveDir, [-1, 0, 0]);
-        if (input.getKey("KeyD") || input.getKey("ArrowRight")) vec3.add(moveDir, moveDir, [1, 0, 0]);
+        // if (input.getKey("KeyA") || input.getKey("ArrowLeft")) vec3.add(moveDir, moveDir, [-1, 0, 0]);
+        // if (input.getKey("KeyD") || input.getKey("ArrowRight")) vec3.add(moveDir, moveDir, [1, 0, 0]);
+        if (input.getKey("KeyJ")) vec3.add(moveDir, moveDir, [-1, 0, 0]);
+        if (input.getKey("KeyL")) vec3.add(moveDir, moveDir, [1, 0, 0]);
 
         // Space/Ctrl - 上下 (沿着世界上方向)
         const worldUp = vec3.fromValues(0, 1, 0);

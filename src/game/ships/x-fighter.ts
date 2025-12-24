@@ -10,7 +10,7 @@ export class XFighter extends Ship {
 
 
     protected cameraView: CameraView = {
-        cockpitOffset: vec3.fromValues(0, 0.9, -1),
+        cockpitOffset: vec3.fromValues(0, 0.85, -1),
         firstPersonPitchDown: 0,
         thirdPersonOffset: vec3.fromValues(0, 3, -10),
         thirdPersonPitchDown: 0.2

@@ -1,5 +1,6 @@
 import { vec3, quat } from "gl-matrix";
 import { Game } from "../../core/Game";
+import { Entity } from "../../scene/Entity";
 import { Ship } from "../ships/Ship";
 import type { Camera } from "../../scene/Camera";
 
@@ -31,6 +32,7 @@ export class ShipCameraController {
   // --- 新增平滑过渡相关变量 ---
   private transitionTime: number = 0.5; // 过渡时长（秒）
   private transitionProgress: number = 1; // 0=开始，1=结束
+  private smoothProgress: number = 0.5; // 第三人称平滑过渡
   private fromPos: vec3 = vec3.create();
   private toPos: vec3 = vec3.create();
   private fromRot: quat = quat.create();
@@ -78,7 +80,7 @@ export class ShipCameraController {
       this.mode = nextMode;
     }
 
-    // 计算目标 offset/rotation
+    // 计算目标 offset/rotation（每帧都要，防止飞船移动时目标点也在动）
     const offset =
       this.mode === CameraMode.FirstPerson
         ? this.target.getCameraViewConfig().cockpitOffset
@@ -107,9 +109,17 @@ export class ShipCameraController {
       vec3.lerp(this.camera.position, this.fromPos, targetPos, this.transitionProgress);
       quat.slerp(this.camera.rotation, this.fromRot, targetRot, this.transitionProgress);
     } else {
-      // 正常跟随
-      vec3.copy(this.camera.position, targetPos);
-      quat.copy(this.camera.rotation, targetRot);
+      if (this.mode === CameraMode.FirstPerson) {
+        // 第一人称：直接跟随，无插值，无加速度
+        vec3.copy(this.camera.position, targetPos);
+        quat.copy(this.camera.rotation, targetRot);
+      } else {
+        // 第三人称：可以继续用插值/物理方式
+        vec3.copy(this.camera.position, targetPos);
+        quat.copy(this.camera.rotation, targetRot);
+      }
+      // 加速度同步
+      this.camera.acceleration = this.target.acceleration;
     }
   }
 }
