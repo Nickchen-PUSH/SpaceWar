@@ -129,6 +129,14 @@ export abstract class Entity {
       vec3.scale(this.velocity, this.velocity, this.maxSpeed / speed);
     }
 
+    // 最小正方向速度为 0，不可以直接倒退
+    const forwardDot = vec3.dot(this.velocity, this.getFront());
+    if (forwardDot < 0) {
+      const forwardComponent = vec3.create();
+      vec3.scale(forwardComponent, this.getFront(), forwardDot);
+      vec3.subtract(this.velocity, this.velocity, forwardComponent);
+    }
+
     // 更新位置
     vec3.scaleAndAdd(this.position, this.position, this.velocity, delta);
 
