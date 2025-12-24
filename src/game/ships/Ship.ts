@@ -13,18 +13,7 @@ export abstract class Ship extends Entity {
         thirdPersonPitchDown: 0.2
     }
 
-    // --- 基础机动参数 (由子类在构造函数中定义) ---
-    protected abstract maxSpeed: number;
-    protected abstract acceleration: number;
-    protected abstract turnSpeed: number;
-
-    // --- 阻理设置 ---
-    protected drag: number = 0.95;  // 阻力系数（0.95-0.99），用于在松开按键时让飞船平滑减速。
-    protected angularDrag: number = 0.9;  // 角阻力系数
-
     // --- 共有状态 ---
-    public velocity: vec3 = vec3.create();
-    public angularVelocity: vec3 = vec3.create();
     public health: number = 100;
     public shield: number = 50;
 
@@ -64,39 +53,14 @@ export abstract class Ship extends Entity {
         // 调用子类的特定逻辑
         this.onUpdate(delta);
 
-        // 物理模拟：应用加速度
-        const forward = this.getFront();
-        const accelVec = vec3.create();
-        vec3.scale(accelVec, forward, this.inputThrottle * this.acceleration);
-        vec3.add(this.velocity, this.velocity, accelVec);
-
-        // 限制最大速度
-        const speed = vec3.length(this.velocity);
-        if (speed > this.maxSpeed) {
-            vec3.scale(this.velocity, this.velocity, this.maxSpeed / speed);
-        }
-        if (speed < 0.01) {
-            vec3.set(this.velocity, 0, 0, 0); // 防止漂移
-        }
-
-        // 应用转向输入到角速度
-        this.angularVelocity[0] += this.inputPitch * this.turnSpeed; // Pitch
-        this.angularVelocity[1] += this.inputYaw * this.turnSpeed;   // Yaw
-        this.angularVelocity[2] += this.inputRoll * this.turnSpeed;  // Roll
-
-        // 物理模拟：应用线速度
-        vec3.scaleAndAdd(this.position, this.position, this.velocity, delta);
-        // 应用阻力
-        vec3.scale(this.velocity, this.velocity, this.drag);
-
-        // 物理模拟：应用角速度（旋转）
-        if (vec3.length(this.angularVelocity) > 0.001) {
-            this.rotateX(this.angularVelocity[0] * delta);
-            this.rotateY(this.angularVelocity[1] * delta);
-            this.rotateZ(this.angularVelocity[2] * delta);
-            // 应用旋转阻力
-            vec3.scale(this.angularVelocity, this.angularVelocity, this.angularDrag);
-        }
+        // 根据输入更新加速度
+        this.acceleration = this.inputThrottle * this.maxAcceleration;
+        vec3.set(
+            this.angularAcceleration,
+            this.inputPitch * this.maxAngularAcceleration[0],
+            this.inputYaw * this.maxAngularAcceleration[1],
+            this.inputRoll * this.maxAngularAcceleration[2]
+        );
     }
 
     /**

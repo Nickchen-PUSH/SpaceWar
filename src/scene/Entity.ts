@@ -7,7 +7,7 @@ export interface MeshConfig {
 }
 const TEMP_MAT4 = mat4.create();
 const UP_VECTOR = vec3.fromValues(0, 1, 0);
-export class Entity {
+export abstract class Entity {
   public id: string;
   public name: string = "";
   public active: boolean = true;
@@ -28,7 +28,27 @@ export class Entity {
   // --- 4. 场景图 (父子关系) ---
   public children: Entity[] = [];
   public parent: Entity | null = null;
-  public scene: any | null = null; // Should be Scene but causes circular dependency
+
+  // =============================
+  // 物理属性
+  // =============================
+  protected isStatic: boolean = false; // 是否为静态物体（不受力学影响）
+
+  // --- 基础机动参数 (由子类在构造函数中定义) ---
+  protected maxSpeed: number = 0;  // [m/s]
+  protected maxAcceleration: number = 0;  // [m/s²]
+  protected maxAngularSpeed: number = 0;  // [rad/s]
+  protected maxAngularAcceleration: vec3 = vec3.fromValues(0, 0, 0);  // [rad/s²] 每个轴的最大角加速度[pitch, yaw, roll]
+
+  // --- 阻理设置 ---
+  protected drag: number = 0.95;  // 阻力系数（0.95-0.99），用于在松开按键时让飞船平滑减速。
+  protected angularDrag: number = 0.9;  // 角阻力系数
+
+  // --- 共有状态 ---
+  public velocity: vec3 = vec3.create();  // [m/s] 线速度
+  public angularVelocity: vec3 = vec3.create();  // [rad/s] 每个轴的角速度[pitch, yaw, roll]
+  public acceleration: number = 0;  // 线加速度[m/s²]
+  public angularAcceleration: vec3 = vec3.create();  // [rad/s²] 每个轴的角加速度[pitch, yaw, roll]
 
   constructor() {
     this.id = crypto.randomUUID();
@@ -89,6 +109,55 @@ export class Entity {
   }
 
   /**
+   * 按照物理规则更新实体状态
+   */
+
+  private applyPhysics(delta: number): void {
+    if (this.isStatic) return;
+
+    // 更新线速度
+    const accelerationVec = vec3.create();
+    vec3.scale(accelerationVec, this.getFront(), this.acceleration);
+    vec3.scaleAndAdd(this.velocity, this.velocity, accelerationVec, delta);
+
+    // 应用阻力
+    vec3.scale(this.velocity, this.velocity, Math.pow(this.drag, delta));
+
+    // 限制最大速度
+    const speed = vec3.length(this.velocity);
+    if (speed > this.maxSpeed) {
+      vec3.scale(this.velocity, this.velocity, this.maxSpeed / speed);
+    }
+
+    // 更新位置
+    vec3.scaleAndAdd(this.position, this.position, this.velocity, delta);
+
+    // 更新角速度
+    const angularAccDelta = vec3.create();
+    vec3.scale(angularAccDelta, this.angularAcceleration, delta);
+    vec3.add(this.angularVelocity, this.angularVelocity, angularAccDelta);
+
+    // 应用角阻力
+    vec3.scale(this.angularVelocity, this.angularVelocity, Math.pow(this.angularDrag, delta));
+
+    // 限制最大角速度
+    const angularSpeed = vec3.length(this.angularVelocity);
+    if (angularSpeed > this.maxAngularSpeed) {
+      vec3.scale(this.angularVelocity, this.angularVelocity, this.maxAngularSpeed / angularSpeed);
+    }
+
+    if (angularSpeed > 0) {
+      // 根据角速度更新旋转
+      const deltaRotation = quat.create();
+      const axis = vec3.create();
+      vec3.normalize(axis, this.angularVelocity);
+      const angle = angularSpeed * delta;
+      quat.setAxisAngle(deltaRotation, axis, angle);
+      quat.multiply(this.rotation, this.rotation, deltaRotation);
+    }
+  }
+
+  /**
    * 逻辑更新 (在 Game loop 中调用)
    */
   update(delta: number): void {
@@ -98,5 +167,6 @@ export class Entity {
     for (const child of this.children) {
       child.update(delta);
     }
+    this.applyPhysics(delta);
   }
 }

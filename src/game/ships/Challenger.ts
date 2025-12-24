@@ -5,7 +5,7 @@ import { vec3 } from "gl-matrix";
 export class Challenger extends Ship {
     protected maxSpeed: number = 150;
     protected acceleration: number = 50;
-    protected turnSpeed: number = 1.0;
+    protected maxAngularSpeed: number = 1.0;
 
     protected cameraView: CameraView ={
             cockpitOffset: vec3.fromValues(0, 1, 3),
