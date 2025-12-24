@@ -10,7 +10,10 @@ import { AssetLoader } from "../../core/AssetLoader";
 import { Scene } from "../../scene/Scene";
 import type { Renderer } from "../Renderer";
 import { Entity } from "../../scene/Entity";
+import { TrailParticleEmitter } from "../../game/effects/TrailParticleEmitter";
 import { Debug, LogChannel } from "../../core/Debug";
+import { vec3 } from "gl-matrix";
+import { Ship } from "../../game/ships/Ship";
 
 // --- START RENDERER PARAMS ---
 const params = {
@@ -303,48 +306,84 @@ export class ThreeRenderer implements Renderer {
     // Retrieve associated Three.js object
     let object3d = entity._rendererData as THREE.Object3D;
 
-    // If not created yet, instantiate from template
-    if (!object3d) {
-      if (entity.meshConfig) { // Changed from meshConfig to simpler meshId
-        const template = this.models.get(entity.meshConfig.geometryId);
-        if (template) {
-          object3d = template.clone(); // Efficient clone
-
-          // Apply initial settings
-          object3d.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-              // Enable shadows if needed
-              if (child.material instanceof THREE.MeshStandardMaterial) {
-                child.material.envMapIntensity = params.envMapIntensity;
-              }
-            }
-          });
-
-          // Bind to Entity
-          entity._rendererData = object3d;
-          this.threeScene.add(object3d);
-        } else {
-          // Prevents spamming warning every frame
-          if (!entity._hasWarnedMissingMesh) {
-            Debug.warn(LogChannel.Rendering, `Model template missing: ${entity.meshConfig.geometryId}`);
-            entity._hasWarnedMissingMesh = true;
-          }
-        }
-      }
-    }
-
+    // Handle visibility: if not visible, remove from scene and return
     if (!entity.visible) {
-      if (object3d && this.threeScene.children.includes(object3d)) {
-        this.threeScene.remove(object3d);
-      }
-      return;
+        if (object3d) {
+            this.threeScene.remove(object3d);
+            // If it's a particle emitter, we own the geometry/material and should clean it up
+            if (entity instanceof TrailParticleEmitter && object3d instanceof THREE.Points) {
+                object3d.geometry.dispose();
+                (object3d.material as THREE.Material).dispose();
+            }
+            entity._rendererData = undefined; // Dereference
+        }
+        return;
     }
 
-    // Sync Transform
-    if (object3d) {
-      object3d.position.fromArray(entity.position);
-      object3d.quaternion.fromArray(entity.rotation);
-      object3d.scale.fromArray(entity.scale);
+    // If visible but not yet created in the renderer, create it now
+    if (!object3d) {
+        if (entity instanceof TrailParticleEmitter) {
+            const geometry = new THREE.BufferGeometry();
+            const material = new THREE.PointsMaterial({
+                color: 0xaaaaff,
+                size: 0.08,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                opacity: 0.6,
+                sizeAttenuation: true, // Makes particles smaller further away
+            });
+            object3d = new THREE.Points(geometry, material);
+        } else if (entity.meshConfig) {
+            const template = this.models.get(entity.meshConfig.geometryId);
+            if (template) {
+                object3d = template.clone();
+                object3d.traverse((child) => {
+                    if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+                        child.material.envMapIntensity = params.envMapIntensity;
+                    }
+                });
+            } else {
+                if (!entity._hasWarnedMissingMesh) {
+                    Debug.warn(LogChannel.Rendering, `Model template missing: ${entity.meshConfig.geometryId}`);
+                    entity._hasWarnedMissingMesh = true;
+                }
+                return; // Can't proceed without a model
+            }
+        } else {
+            return; // Nothing to render for this entity
+        }
+        
+        entity._rendererData = object3d;
+        this.threeScene.add(object3d);
+    }
+
+    // Now, sync the created/existing object's state with the entity state
+    if (entity instanceof TrailParticleEmitter) {
+      const points = object3d as THREE.Points;
+      const positions = new Float32Array(entity.particles.length * 3);
+      
+      // 如果你没有自定义 Shader，可以通过调整材质的整体透明度
+      // 简单做法：根据飞船速度直接调整整个材质的透明度
+      const shipSpeed = vec3.length((entity.parent as Ship).velocity);
+      (points.material as THREE.PointsMaterial).opacity = Math.min(shipSpeed / 100, 1.0);
+      (points.material as THREE.PointsMaterial).transparent = true;
+
+      entity.particles.forEach((p, i) => {
+          positions[i * 3 + 0] = p.position[0];
+          positions[i * 3 + 1] = p.position[1];
+          positions[i * 3 + 2] = p.position[2];
+      });
+      
+      points.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      points.geometry.attributes.position.needsUpdate = true;
+
+      // 同步位置和旋转
+      object3d.position.fromArray(entity.parent!.position);
+      object3d.quaternion.fromArray(entity.parent!.rotation);
+    } else if (object3d) { // For all other standard entities
+        object3d.position.fromArray(entity.position);
+        object3d.quaternion.fromArray(entity.rotation);
+        object3d.scale.fromArray(entity.scale);
     }
   }
 

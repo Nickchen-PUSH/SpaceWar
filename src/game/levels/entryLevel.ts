@@ -6,6 +6,7 @@ import { vec3 } from "gl-matrix";
 import { Challenger } from "../ships/Challenger";
 import { PlayerController } from "../gamecontrollers/PlayerController";
 import { XFighter } from "../ships/x-fighter";
+import { TrailParticleEmitter } from "../effects/TrailParticleEmitter";
 
 export class entryLevel implements Level {
 
@@ -34,6 +35,12 @@ export class entryLevel implements Level {
     // scene.add(challenger);
     const xfighter = new XFighter();
     scene.add(xfighter);
+
+    // Create and attach the particle emitter
+    const particleEmitter = new TrailParticleEmitter();
+    xfighter.children.push(particleEmitter);
+    particleEmitter.parent = xfighter;
+    scene.add(particleEmitter);
 
     // Set up the free camera controller
     // const cameraController = new FreeCameraController(game, scene.mainCamera);

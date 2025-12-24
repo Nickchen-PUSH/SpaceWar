@@ -171,10 +171,12 @@ export abstract class Entity {
   update(delta: number): void {
     if (!this.active) return;
 
-    // 递归更新子节点
+    // 首先应用物理更新，确保当前实体的位置在本帧是正确的
+    this.applyPhysics(delta);
+
+    // 然后递归更新子节点，子节点可以依赖父节点更新后的状态
     for (const child of this.children) {
       child.update(delta);
     }
-    this.applyPhysics(delta);
   }
 }
