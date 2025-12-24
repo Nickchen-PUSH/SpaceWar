@@ -112,7 +112,7 @@ export abstract class Entity {
    * 按照物理规则更新实体状态
    */
 
-  private applyPhysics(delta: number): void {
+  protected applyPhysics(delta: number): void {
     if (this.isStatic) return;
 
     // 更新线速度

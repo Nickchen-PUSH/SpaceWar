@@ -61,6 +61,7 @@ export abstract class Ship extends Entity {
             this.inputYaw * this.maxAngularAcceleration[1],
             this.inputRoll * this.maxAngularAcceleration[2]
         );
+        this.applyPhysics(delta);
     }
 
     /**
