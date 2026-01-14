@@ -14,7 +14,7 @@ import { TrailParticleEmitter } from "../../game/effects/TrailParticleEmitter";
 import { Debug, LogChannel } from "../../core/Debug";
 import { vec3 } from "gl-matrix";
 import { Ship } from "../../game/ships/Ship";
-import { UIManager, UIElement, UISprite, UIRect } from "../../ui";
+import { UIManager, UIElement, UISprite, UIRect, UIText } from "../../ui";
 
 // --- START RENDERER PARAMS ---
 const params = {
@@ -295,13 +295,42 @@ export class ThreeRenderer implements Renderer {
   }
 
   private syncUI(uiManager: UIManager) {
+    const visited = new Set<string>();
     const roots = uiManager.getElements();
     for (const root of roots) {
-      this.syncUINode(root, this.uiScene);
+      this.syncUINode(root, this.uiScene, visited);
+    }
+
+    // Garbage Collection: Remove objects that are no longer in the UI tree
+    for (const [id, obj] of this.uiObjects) {
+      if (!visited.has(id)) {
+        // Remove from parent
+        if (obj.parent) {
+          obj.parent.remove(obj);
+        }
+        
+        // Dispose visual mesh if exists
+        const visual = obj.children.find(c => c.name === "visual") as THREE.Mesh;
+        if (visual) {
+            visual.geometry.dispose(); // PlaneGeometry is shared, but safety check
+            if (visual.material instanceof THREE.Material) {
+                visual.material.dispose();
+                // Dispose texture if it's a CanvasTexture (UIText)
+                if ((visual.material as any).map && (visual.material as any).map.isCanvasTexture) {
+                    (visual.material as any).map.dispose();
+                }
+            }
+        }
+
+        // Remove from map
+        this.uiObjects.delete(id);
+      }
     }
   }
 
-  private syncUINode(node: UIElement, parentObj: THREE.Object3D) {
+  private syncUINode(node: UIElement, parentObj: THREE.Object3D, visited: Set<string>) {
+    visited.add(node.id);
+
     // 1. 获取或创建 Group 容器
     let group = this.uiObjects.get(node.id) as THREE.Group;
     if (!group) {
@@ -313,32 +342,33 @@ export class ThreeRenderer implements Renderer {
     // 2. 处理可见性
     if (!node.visible) {
       group.visible = false;
-      return;
+      // Even if invisible, we keep it in visited so it's not GC'd
+      // But we still need to process children if we want them to exist?
+      // Actually if parent is invisible, children are invisible too.
+      // But we must recurse to mark children as visited, otherwise they will be GC'd!
+      // This is important: GC logic relies on recursion.
+    } else {
+      group.visible = true;
     }
-    group.visible = true;
 
     // 3. 更新 Group 的变换 (位置、旋转、逻辑缩放)
-    // 注意：这里的 scale 是 node.scale，不是 size。
-    // UIElement.scale 通常用于动画效果，默认为 (1,1)。
-    // 我们不把 size 乘进去，size 只影响内部的 visual mesh。
     group.position.set(node.position[0], node.position[1], node.zIndex);
     group.rotation.z = node.rotation;
     group.scale.set(node.scale[0], node.scale[1], 1);
 
     // 4. 处理视觉内容 (Mesh)
-    // 我们在 Group 内部寻找或创建一个名为 "visual" 的 Mesh
     let visual = group.children.find(c => c.name === "visual") as THREE.Mesh;
     
     // 判断是否需要 Visual
-    const needsVisual = (node instanceof UISprite) || (node instanceof UIRect);
+    const needsVisual = (node instanceof UISprite) || (node instanceof UIRect) || (node instanceof UIText);
 
     if (needsVisual) {
       if (!visual) {
         let material: THREE.Material;
-        if (node instanceof UISprite) {
+        if (node instanceof UISprite || node instanceof UIText) {
           material = new THREE.MeshBasicMaterial({
             transparent: true,
-            opacity: node.opacity,
+            opacity: 1, // UIText 不需要 opacity 属性，但 UISprite 需要
             depthTest: false,
             depthWrite: false
           });
@@ -357,11 +387,11 @@ export class ThreeRenderer implements Renderer {
       }
 
       // 更新 Visual 的大小 (Size)
-      // PlaneGeometry 是 1x1，所以我们直接 scale 它到 size
       visual.scale.set(node.size[0], node.size[1], 1);
 
       // 更新 Visual 的材质属性
       const mat = visual.material as THREE.MeshBasicMaterial;
+      
       if (node instanceof UISprite) {
         mat.opacity = node.opacity;
         const tex = this.textures.get(node.textureId);
@@ -369,30 +399,40 @@ export class ThreeRenderer implements Renderer {
           mat.map = tex;
           mat.needsUpdate = true;
         }
-        // 如果是从 UIRect 变过来的，可能需要重置 color
         mat.color.setHex(0xffffff);
       } else if (node instanceof UIRect) {
         mat.color.setRGB(node.color[0], node.color[1], node.color[2]);
         mat.opacity = node.color[3];
         mat.map = null;
+      } else if (node instanceof UIText) {
+        if (node.isDirty) {
+            if (mat.map) mat.map.dispose();
+            const tex = new THREE.CanvasTexture(node.canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.minFilter = THREE.LinearFilter;
+            tex.magFilter = THREE.LinearFilter; // 保持文字清晰
+            mat.map = tex;
+            mat.needsUpdate = true;
+            node.isDirty = false;
+        }
+        mat.opacity = 1; // 确保文字不透明
+        mat.color.setHex(0xffffff);
       }
     } else {
-      // 如果不需要 visual 但存在（比如类型变了），移除它
       if (visual) {
         group.remove(visual);
-        visual.geometry.dispose(); // PlaneGeometry 是共享的，不要 dispose geometry!
         (visual.material as THREE.Material).dispose();
       }
     }
 
-    // 5. 确保层级关系正确 (Group 挂在 Parent Group 下)
+    // 5. 确保层级关系正确
     if (group.parent !== parentObj) {
       parentObj.add(group);
     }
 
     // 6. 递归处理子节点
     for (const child of node.children) {
-      this.syncUINode(child, group);
+      this.syncUINode(child, group, visited);
     }
   }
 

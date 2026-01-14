@@ -9,6 +9,9 @@ import { XFighter } from "../ships/x-fighter";
 import { TrailParticleEmitter } from "../effects/TrailParticleEmitter";
 import { Crosshair } from "../ui/Crosshair";
 import { HealthBar } from "../ui/HealthBar";
+import { StartScreen } from "../ui/StartScreen";
+
+type GameState = 'waiting' | 'playing';
 
 export class entryLevel implements Level {
 
@@ -16,6 +19,9 @@ export class entryLevel implements Level {
   private playerController!: PlayerController;
   private crosshair!: Crosshair;
   private healthBar!: HealthBar;
+  private startScreen!: StartScreen;
+  
+  private gameState: GameState = 'waiting';
 
   constructor() {
   }
@@ -26,16 +32,22 @@ export class entryLevel implements Level {
 
     scene.background = "sky_galaxy";
 
-    // Set the initial camera position and orientation for this level
-    scene.mainCamera.position[0] = 7;
-    scene.mainCamera.position[1] = 1;
-    scene.mainCamera.position[2] = 8;
-    scene.mainCamera.lookAt(vec3.fromValues(0, 0, 0)); // Look at the origin
+    // Show Start Screen
+    this.startScreen = new StartScreen(game);
+    this.gameState = 'waiting';
 
+    // 初始相机位置 (稍微远一点，或者就在原点)
+    scene.mainCamera.position[0] = 0;
+    scene.mainCamera.position[1] = 0;
+    scene.mainCamera.position[2] = 20;
+    scene.mainCamera.lookAt(vec3.fromValues(0, 0, 0));
+  }
+
+  private startGame(game: Game) {
+    const scene = game.getScene();
 
     // Create and add the player's ship
     // const challenger = new Challenger();
-
     // scene.add(challenger);
     const xfighter = new XFighter();
     scene.add(xfighter);
@@ -60,22 +72,26 @@ export class entryLevel implements Level {
 
   onExit(): void {
     console.log("Exiting Entry Level");
-    if (this.crosshair) {
-      this.crosshair.destroy();
-    }
-    if (this.healthBar) {
-      this.healthBar.destroy();
-    }
+    if (this.crosshair) this.crosshair.destroy();
+    if (this.healthBar) this.healthBar.destroy();
+    if (this.startScreen) this.startScreen.destroy();
   }
 
   onUpdate(game: Game, delta: number): void {
-    this.cameraController.update(delta);
-    this.playerController.update(delta);
-    if (this.crosshair) {
-      this.crosshair.update(delta);
+    if (this.gameState === 'waiting') {
+        if (game.getInput().isAnyKeyDown()) {
+            this.startScreen.destroy();
+            this.startGame(game);
+            this.gameState = 'playing';
+        }
+        return;
     }
-    if (this.healthBar) {
-        this.healthBar.update(delta);
+
+    if (this.gameState === 'playing') {
+        this.cameraController.update(delta);
+        this.playerController.update(delta);
+        if (this.crosshair) this.crosshair.update(delta);
+        if (this.healthBar) this.healthBar.update(delta);
     }
   }
 }

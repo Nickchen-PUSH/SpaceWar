@@ -98,6 +98,13 @@ export class Input {
     }
 
     /**
+     * 检测是否有任意键刚刚被按下
+     */
+    isAnyKeyDown(): boolean {
+        return this.keysDown.size > 0 || this.mouseButtonsDown.size > 0;
+    }
+
+    /**
      * 检测鼠标按键是否被按住 (0:左, 1:中, 2:右)
      */
     getMouseButton(button: number): boolean {
