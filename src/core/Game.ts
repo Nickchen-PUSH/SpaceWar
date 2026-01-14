@@ -4,6 +4,7 @@ import { Scene } from "../scene/Scene";
 import { LevelManager } from "./LevelManager";
 import type { Renderer } from "../renderer/Renderer"; // 使用 type 避免运行时依赖
 import type { AssetLoader } from "./AssetLoader";
+import { UIManager } from "../ui/UIManager";
 
 export class Game {
   // --- 核心系统 ---
@@ -17,6 +18,8 @@ export class Game {
   private loader: AssetLoader;
   // 关卡管理器 (负责切换关卡、运行当前关卡逻辑)
   public levelManager: LevelManager;
+  // UI 管理器
+  public uiManager: UIManager;
 
   // --- 数据容器 ---
   // 场景数据 (Entities, Camera) - 它是纯数据，不含游戏业务逻辑
@@ -40,6 +43,7 @@ export class Game {
     this.time = new Time();
     this.input = new Input();
     this.scene = new Scene();
+    this.uiManager = new UIManager();
     
     // 初始化关卡管理器，将 Game 自身传进去，方便关卡访问 Scene/Input
     this.levelManager = new LevelManager(this);
@@ -128,6 +132,9 @@ export class Game {
     // 2. 更新逻辑 (Game Logic)
     // LevelManager 负责驱动具体的游戏规则 (刷怪、积分、剧情)
     this.levelManager.update(this.time.delta);
+    
+    // UI 逻辑更新
+    this.uiManager.update(this.time.delta);
 
     // 3. 更新物理/世界 (Physics / World)
     // Scene 负责驱动所有实体的移动、动画、矩阵更新
@@ -135,7 +142,7 @@ export class Game {
 
     // 4. 渲染 (Rendering)
     // Renderer 读取 Scene 数据并绘制一帧
-    this.renderer.render(this.scene);
+    this.renderer.render(this.scene, this.uiManager);
 
     // 5. 输入后处理 (Input Post-process)
     // 清除“本帧刚按下”的状态，防止连续触发
@@ -183,5 +190,9 @@ export class Game {
   
   public getRenderer(): Renderer {
     return this.renderer;
+  }
+
+  public getUIManager(): UIManager {
+    return this.uiManager;
   }
 }

@@ -1,4 +1,5 @@
 import { Scene } from "../scene/Scene";
+import { UIManager } from "../ui/UIManager";
 
 export interface Renderer {
   /**
@@ -9,7 +10,7 @@ export interface Renderer {
   /**
    * 核心渲染循环：同步数据 -> 绘制画面
    */
-  render(scene: Scene): void;
+  render(scene: Scene, uiManager?: UIManager): void;
 
   /**
    * 处理窗口大小变化

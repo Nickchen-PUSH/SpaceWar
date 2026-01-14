@@ -14,6 +14,7 @@ import { TrailParticleEmitter } from "../../game/effects/TrailParticleEmitter";
 import { Debug, LogChannel } from "../../core/Debug";
 import { vec3 } from "gl-matrix";
 import { Ship } from "../../game/ships/Ship";
+import { UIManager, UIElement, UISprite, UIRect } from "../../ui";
 
 // --- START RENDERER PARAMS ---
 const params = {
@@ -50,11 +51,19 @@ export class ThreeRenderer implements Renderer {
   private composer?: EffectComposer;
   private bloomPass?: UnrealBloomPass;
 
+  // UI
+  private uiScene: THREE.Scene;
+  private uiCamera: THREE.OrthographicCamera;
+  private uiObjects: Map<string, THREE.Object3D> = new Map();
+  private uiPlaneGeometry = new THREE.PlaneGeometry(1, 1);
+
   constructor() {
     this.webglRenderer = null!;
     this.threeScene = null!;
     this.camera = null!;
     this.container = null!;
+    this.uiScene = null!;
+    this.uiCamera = null!;
   }
 
   // =========================================================
@@ -187,6 +196,13 @@ export class ThreeRenderer implements Renderer {
     this.threeScene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
 
+    // UI Scene & Camera
+    this.uiScene = new THREE.Scene();
+    const width = container.offsetWidth;
+    const height = container.offsetHeight;
+    this.uiCamera = new THREE.OrthographicCamera(-width / 2, width / 2, height / 2, -height / 2, 0.1, 100);
+    this.uiCamera.position.z = 10;
+
     // Initial Setup
     this.setupLighting();
     this.setupPostprocessing();
@@ -239,7 +255,7 @@ export class ThreeRenderer implements Renderer {
     bloom.add(params, "bloomRadius", 0.0, 1.0).name("Radius").onChange(value => this.bloomPass && (this.bloomPass.radius = value));
   }
 
-  public render(scene: Scene) {
+  public render(scene: Scene, uiManager?: UIManager) {
     const { mainCamera } = scene;
 
     // 1. Sync Camera
@@ -265,8 +281,119 @@ export class ThreeRenderer implements Renderer {
       this.syncEntity(entity);
     });
 
-    // 4. Render Frame
+    // 4. Render World
+    this.webglRenderer.autoClear = false;
+    this.webglRenderer.clear();
     this.composer?.render();
+
+    // 5. Render UI
+    if (uiManager) {
+      this.webglRenderer.clearDepth();
+      this.syncUI(uiManager);
+      this.webglRenderer.render(this.uiScene, this.uiCamera);
+    }
+  }
+
+  private syncUI(uiManager: UIManager) {
+    const roots = uiManager.getElements();
+    for (const root of roots) {
+      this.syncUINode(root, this.uiScene);
+    }
+  }
+
+  private syncUINode(node: UIElement, parentObj: THREE.Object3D) {
+    // 1. 获取或创建 Group 容器
+    let group = this.uiObjects.get(node.id) as THREE.Group;
+    if (!group) {
+      group = new THREE.Group();
+      this.uiObjects.set(node.id, group);
+      parentObj.add(group);
+    }
+
+    // 2. 处理可见性
+    if (!node.visible) {
+      group.visible = false;
+      return;
+    }
+    group.visible = true;
+
+    // 3. 更新 Group 的变换 (位置、旋转、逻辑缩放)
+    // 注意：这里的 scale 是 node.scale，不是 size。
+    // UIElement.scale 通常用于动画效果，默认为 (1,1)。
+    // 我们不把 size 乘进去，size 只影响内部的 visual mesh。
+    group.position.set(node.position[0], node.position[1], node.zIndex);
+    group.rotation.z = node.rotation;
+    group.scale.set(node.scale[0], node.scale[1], 1);
+
+    // 4. 处理视觉内容 (Mesh)
+    // 我们在 Group 内部寻找或创建一个名为 "visual" 的 Mesh
+    let visual = group.children.find(c => c.name === "visual") as THREE.Mesh;
+    
+    // 判断是否需要 Visual
+    const needsVisual = (node instanceof UISprite) || (node instanceof UIRect);
+
+    if (needsVisual) {
+      if (!visual) {
+        let material: THREE.Material;
+        if (node instanceof UISprite) {
+          material = new THREE.MeshBasicMaterial({
+            transparent: true,
+            opacity: node.opacity,
+            depthTest: false,
+            depthWrite: false
+          });
+        } else { // UIRect
+          material = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 1,
+            depthTest: false,
+            depthWrite: false
+          });
+        }
+        visual = new THREE.Mesh(this.uiPlaneGeometry, material);
+        visual.name = "visual";
+        group.add(visual);
+      }
+
+      // 更新 Visual 的大小 (Size)
+      // PlaneGeometry 是 1x1，所以我们直接 scale 它到 size
+      visual.scale.set(node.size[0], node.size[1], 1);
+
+      // 更新 Visual 的材质属性
+      const mat = visual.material as THREE.MeshBasicMaterial;
+      if (node instanceof UISprite) {
+        mat.opacity = node.opacity;
+        const tex = this.textures.get(node.textureId);
+        if (tex && mat.map !== tex) {
+          mat.map = tex;
+          mat.needsUpdate = true;
+        }
+        // 如果是从 UIRect 变过来的，可能需要重置 color
+        mat.color.setHex(0xffffff);
+      } else if (node instanceof UIRect) {
+        mat.color.setRGB(node.color[0], node.color[1], node.color[2]);
+        mat.opacity = node.color[3];
+        mat.map = null;
+      }
+    } else {
+      // 如果不需要 visual 但存在（比如类型变了），移除它
+      if (visual) {
+        group.remove(visual);
+        visual.geometry.dispose(); // PlaneGeometry 是共享的，不要 dispose geometry!
+        (visual.material as THREE.Material).dispose();
+      }
+    }
+
+    // 5. 确保层级关系正确 (Group 挂在 Parent Group 下)
+    if (group.parent !== parentObj) {
+      parentObj.add(group);
+    }
+
+    // 6. 递归处理子节点
+    for (const child of node.children) {
+      this.syncUINode(child, group);
+    }
   }
 
   private updateAllMaterials() {
@@ -394,6 +521,13 @@ export class ThreeRenderer implements Renderer {
     if (this.camera) {
       this.camera.aspect = width / height;
       this.camera.updateProjectionMatrix();
+    }
+    if (this.uiCamera) {
+      this.uiCamera.left = -width / 2;
+      this.uiCamera.right = width / 2;
+      this.uiCamera.top = height / 2;
+      this.uiCamera.bottom = -height / 2;
+      this.uiCamera.updateProjectionMatrix();
     }
   }
 }

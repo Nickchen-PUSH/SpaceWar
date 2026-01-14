@@ -20,6 +20,7 @@ async function bootstrap() {
   loader.add("ship_x-wing", "models/high_poly_x-wing_fighter.glb");
   loader.add("sky_galaxy", "textures/environment.hdr");
   loader.add("ship_challenger_v1", "models/ship_challenger_v1.gltf");
+  loader.add("crosshair", "textures/target.png");
 
 
   // 设置加载进度回调 (可以在这里更新 DOM 里的进度条)
