@@ -1,3 +1,4 @@
+import { Debug, LogChannel } from "../../core/Debug";
 import { vec3, quat } from "gl-matrix";
 import { Game } from "../../core/Game";
 import { Entity } from "../../scene/Entity";
@@ -27,17 +28,9 @@ export class ShipCameraController {
   private game: Game;
   private target: Ship;
 
-  public mode: CameraMode = CameraMode.ThirdPerson;
+  private firstFrame: boolean = true;
 
-  // --- 新增平滑过渡相关变量 ---
-  private transitionTime: number = 0.5; // 过渡时长（秒）
-  private transitionProgress: number = 1; // 0=开始，1=结束
-  private smoothProgress: number = 0.5; // 第三人称平滑过渡
-  private fromPos: vec3 = vec3.create();
-  private toPos: vec3 = vec3.create();
-  private fromRot: quat = quat.create();
-  private toRot: quat = quat.create();
-  private transitioning: boolean = false;
+  public mode: CameraMode = CameraMode.ThirdPerson;
 
   constructor(game: Game, camera: Camera, target: Ship) {
     this.game = game;
@@ -48,39 +41,7 @@ export class ShipCameraController {
   update(delta: number) {
     const input = this.game.getInput();
 
-    // 触发切换
-    if (input.getKeyDown("KeyV")) {
-      // 记录切换前的相机位置和旋转
-      vec3.copy(this.fromPos, this.camera.position);
-      quat.copy(this.fromRot, this.camera.rotation);
-
-      // 计算切换后的目标位置和旋转
-      const nextMode =
-        this.mode === CameraMode.FirstPerson
-          ? CameraMode.ThirdPerson
-          : CameraMode.FirstPerson;
-      const offset =
-        nextMode === CameraMode.FirstPerson
-          ? this.target.getCameraViewConfig().cockpitOffset
-          : this.target.getCameraViewConfig().thirdPersonOffset;
-      vec3.transformQuat(this.toPos, offset, this.target.rotation);
-      vec3.add(this.toPos, this.target.position, this.toPos);
-
-      quat.copy(this.toRot, this.target.rotation);
-      quat.rotateY(this.toRot, this.toRot, Math.PI);
-      if (nextMode === CameraMode.FirstPerson && this.target.getCameraViewConfig().firstPersonPitchDown !== 0) {
-        quat.rotateX(this.toRot, this.toRot, -this.target.getCameraViewConfig().firstPersonPitchDown);
-      }
-      if (nextMode === CameraMode.ThirdPerson && this.target.getCameraViewConfig().thirdPersonPitchDown !== 0) {
-        quat.rotateX(this.toRot, this.toRot, -this.target.getCameraViewConfig().thirdPersonPitchDown);
-      }
-
-      this.transitionProgress = 0;
-      this.transitioning = true;
-      this.mode = nextMode;
-    }
-
-    // 计算目标 offset/rotation（每帧都要，防止飞船移动时目标点也在动）
+    // 计算目标 offset/rotation
     const offset =
       this.mode === CameraMode.FirstPerson
         ? this.target.getCameraViewConfig().cockpitOffset
@@ -98,28 +59,31 @@ export class ShipCameraController {
       quat.rotateX(targetRot, targetRot, -this.target.getCameraViewConfig().thirdPersonPitchDown);
     }
 
-    // 平滑过渡
-    if (this.transitioning) {
-      this.transitionProgress += delta / this.transitionTime;
-      if (this.transitionProgress >= 1) {
-        this.transitionProgress = 1;
-        this.transitioning = false;
+    // 第一帧或切换视角时，直接跳转到目标位置和朝向
+    if (this.firstFrame || input.getKeyDown("KeyV")) {
+      vec3.copy(this.camera.position, targetPos);
+      quat.copy(this.camera.rotation, targetRot);
+      vec3.set(this.camera.velocity, 0, 0, 0);
+      vec3.set(this.camera.angularVelocity, 0, 0, 0);
+      this.camera.acceleration = 0;
+      vec3.set(this.camera.angularAcceleration, 0, 0, 0);
+
+      // 切换模式
+      if (input.getKeyDown("KeyV")) {
+        this.mode =
+          this.mode === CameraMode.FirstPerson
+            ? CameraMode.ThirdPerson
+            : CameraMode.FirstPerson;
       }
-      // 插值
-      vec3.lerp(this.camera.position, this.fromPos, targetPos, this.transitionProgress);
-      quat.slerp(this.camera.rotation, this.fromRot, targetRot, this.transitionProgress);
-    } else {
-      if (this.mode === CameraMode.FirstPerson) {
-        // 第一人称：直接跟随，无插值，无加速度
-        vec3.copy(this.camera.position, targetPos);
-        quat.copy(this.camera.rotation, targetRot);
-      } else {
-        // 第三人称：可以继续用插值/物理方式
-        vec3.copy(this.camera.position, targetPos);
-        quat.copy(this.camera.rotation, targetRot);
-      }
-      // 加速度同步
-      this.camera.acceleration = this.target.acceleration;
+      this.firstFrame = false;
+      return;
     }
+    this.camera.acceleration = this.target.acceleration;
+    vec3.copy(this.camera.angularAcceleration, this.target.angularAcceleration);
+    this.camera.update(delta);
+    
+    if (this.target.acceleration > 0)
+      Debug.log(LogChannel.GameLogic, `[CameraController] camera.acceleration=`, this.camera.acceleration, "velocity=", this.camera.velocity);
+      Debug.log(LogChannel.GameLogic, `[Ship] ship.acceleration=`, this.target.acceleration, "velocity=", this.target.velocity);
   }
 }

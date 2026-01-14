@@ -35,4 +35,8 @@ export class Camera extends Entity {
   public resize(width: number, height: number): void {
     this.aspect = width / height;
   }
+
+  public cameraFollow(delta: number): void {
+    super.applyPhysics(delta);
+  }
 }

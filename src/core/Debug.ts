@@ -17,6 +17,7 @@ export class Debug {
   private static activeChannels: Set<LogChannel> = new Set([
     LogChannel.System, // 默认只开启系统日志
     // LogChannel.Input, // 开发物理时解注这一行
+    LogChannel.GameLogic,
   ]);
 
   // 为每个通道配置颜色 (可选，为了好看)

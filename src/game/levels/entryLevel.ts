@@ -9,7 +9,7 @@ import { XFighter } from "../ships/x-fighter";
 
 export class entryLevel implements Level {
 
-  private cameraController!: FreeCameraController;
+  private cameraController!: ShipCameraController;
   private playerController!: PlayerController;
 
   constructor() {
