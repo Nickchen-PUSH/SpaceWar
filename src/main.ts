@@ -3,6 +3,7 @@ import { Game } from "./core/Game";
 import { AssetLoader } from "./core/AssetLoader";
 import { ThreeRenderer } from "./renderer";
 import { entryLevel } from "./game/levels/entryLevel";
+import { combatLevel } from './game/levels/combatLevel';
 /**
  * 游戏入口函数
  * 负责整个应用的生命周期初始化
@@ -18,6 +19,7 @@ async function bootstrap() {
   // 注册资源清单
   // 在实际项目中，这些路径通常指向 public/assets 文件夹
   loader.add("ship_x-wing", "models/high_poly_x-wing_fighter.glb");
+  loader.add("ship_t-fighter", "models/star_wars_tieln_fighter.glb");
   loader.add("sky_galaxy", "textures/environment.hdr");
   loader.add("ship_challenger_v1", "models/ship_challenger_v1.gltf");
   loader.add("crosshair", "textures/target.png");
@@ -65,11 +67,7 @@ async function bootstrap() {
   // 3. 注入游戏逻辑 (Inject Game Logic)
   // ===========================================
 
-  // 创建第一关 (太空战斗)
-  const startLevel = new entryLevel();
-
-  // 告诉关卡管理器：请切换到这一关
-  // 这会触发 entryLevel.onEnter()，里面会生成飞船和敌人
+  const startLevel = new combatLevel();
   game.levelManager.changeLevel(startLevel);
 
   // ===========================================

@@ -91,6 +91,18 @@ export abstract class Entity {
   }
 
   /**
+   * 统一设置缩放 (支持标量或 vec3)
+   * @param scale 缩放系数(标量)或三轴缩放(vec3)
+   */
+  public setScale(scale: number | vec3) {
+    if (typeof scale === "number") {
+      vec3.set(this.scale, scale, scale, scale);
+      return;
+    }
+    vec3.copy(this.scale, scale);
+  }
+
+  /**
    * 绕世界坐标轴旋转 (通常用于平台、自转的星球)
    * @param axis 世界轴 (需要归一化)
    * @param rad 弧度
@@ -141,30 +153,27 @@ export abstract class Entity {
     // 更新位置
     vec3.scaleAndAdd(this.position, this.position, this.velocity, delta);
 
-    // 更新角速度（局部坐标系：pitch/yaw/roll 以飞船自身轴为基准）
+    // 更新角速度
     const angularAccDelta = vec3.create();
     vec3.scale(angularAccDelta, this.angularAcceleration, delta);
     vec3.add(this.angularVelocity, this.angularVelocity, angularAccDelta);
 
-    // 应用角阻力（局部）
+    // 应用角阻力
     vec3.scale(this.angularVelocity, this.angularVelocity, Math.pow(this.angularDrag, delta));
 
-    // 限制最大角速度（局部）
+    // 限制最大角速度
     const angularSpeed = vec3.length(this.angularVelocity);
     if (angularSpeed > this.maxAngularSpeed) {
       vec3.scale(this.angularVelocity, this.angularVelocity, this.maxAngularSpeed / angularSpeed);
     }
 
     if (angularSpeed > 0) {
-      // 根据局部角速度更新旋转：将局部轴转换为世界轴
-      const axisLocal = vec3.create();
-      vec3.normalize(axisLocal, this.angularVelocity);
-      const axisWorld = vec3.create();
-      vec3.transformQuat(axisWorld, axisLocal, this.rotation);
-
+      // 根据角速度更新旋转
       const deltaRotation = quat.create();
+      const axis = vec3.create();
+      vec3.normalize(axis, this.angularVelocity);
       const angle = angularSpeed * delta;
-      quat.setAxisAngle(deltaRotation, axisWorld, angle);
+      quat.setAxisAngle(deltaRotation, axis, angle);
       quat.multiply(this.rotation, this.rotation, deltaRotation);
     }
 
