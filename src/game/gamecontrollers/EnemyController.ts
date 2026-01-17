@@ -14,7 +14,6 @@ export class EnemyController {
   }
 
   update(delta: number) {
-    // 你可以在这里添加更多AI逻辑，比如移动、追踪玩家等
   }
 
 }

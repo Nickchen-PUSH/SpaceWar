@@ -26,6 +26,7 @@ export class Camera extends Entity {
     this.aspect = aspect;
     this.near = near;
     this.far = far;
+    this.name = "MainCamera";
   }
 
   public getFront(): vec3 {

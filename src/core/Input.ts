@@ -140,15 +140,15 @@ export class Input {
      */
     getAxis(negativeKey: string, positiveKey: string): number {
         let value = 0;
-        if (this.getKey(positiveKey) || this.getKey("ArrowRight")) value += 1; // 兼容箭头键
-        if (this.getKey(negativeKey) || this.getKey("ArrowLeft")) value -= 1;
+        if (this.getKey(positiveKey)) value += 1; // 兼容箭头键
+        if (this.getKey(negativeKey)) value -= 1;
         return value;
     }
 
     getAxisVertical(negativeKey: string, positiveKey: string): number {
         let value = 0;
-        if (this.getKey(positiveKey) || this.getKey("ArrowUp")) value += 1;
-        if (this.getKey(negativeKey) || this.getKey("ArrowDown")) value -= 1;
+        if (this.getKey(positiveKey)) value += 1;
+        if (this.getKey(negativeKey)) value -= 1;
         return value;
     }
 

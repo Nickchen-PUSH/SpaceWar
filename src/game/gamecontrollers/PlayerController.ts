@@ -6,8 +6,9 @@ export class PlayerController {
   private target: Ship | null = null;
 
   // 控制模式开关
-  public useMouseSteering: boolean = true; 
-  
+  public useMouseSteering: boolean = false;
+
+
   // 鼠标灵敏度
   public mouseSensitivity: number = 0.02;
 
@@ -30,31 +31,35 @@ export class PlayerController {
     // 1. 计算油门 (Throttle)
     // Shift 加速，Ctrl 减速，或者 W/S 前后
     const throttle = input.getAxisVertical("KeyS", "KeyW");
-    
+
     // 2. 计算旋转 (Rotation)
     let pitch = 0;
     let yaw = 0;
     let roll = 0;
 
+    if (input.getKeyDown("KeyM")) {
+      this.useMouseSteering = !this.useMouseSteering;
+    }
+
     if (this.useMouseSteering) {
       // --- 鼠标模式 (类似 战争雷霆 / 自由枪骑兵) ---
       // 假设 Input 系统有 getMouseDelta (每帧鼠标移动量)
-      const mouse = input.getMouseDelta(); 
-      
-      // 鼠标左右 -> Yaw
-      yaw = -mouse.x * this.mouseSensitivity;
-      
+      const mouse = input.getMouseDelta();
+      // 键盘 Q/E -> yaw
+      yaw = -input.getAxis("KeyQ", "KeyE");
+
+      // 鼠标左右 -> roll
+      roll = -mouse.x * this.mouseSensitivity;
+
       // 鼠标上下 -> Pitch
       pitch = -mouse.y * this.mouseSensitivity;
-      
-      // 键盘 Q/E -> Roll
-      roll = input.getAxis("KeyQ", "KeyE");
+
 
     } else {
       // --- 纯键盘模式 ---
+      yaw = -input.getAxis("KeyQ", "KeyE");
       pitch = input.getAxisVertical("ArrowDown", "ArrowUp");
-      yaw = input.getAxis("ArrowLeft", "ArrowRight");
-      roll = input.getAxis("KeyQ", "KeyE");
+      roll = input.getAxis("ArrowLeft", "ArrowRight");
     }
 
     // 3. 动作 (Action)
