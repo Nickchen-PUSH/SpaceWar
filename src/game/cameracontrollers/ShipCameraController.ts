@@ -32,6 +32,18 @@ export class ShipCameraController {
 
   public mode: CameraMode = CameraMode.ThirdPerson;
 
+  // 过渡参数
+  private transitionTime: number = 0;
+  private readonly transitionDuration: number = 0.3; // 过渡时长（秒）
+
+  // 过渡状态变量
+  private inTransition: boolean = false;
+  private startPos: vec3 = vec3.create();
+  private endPos: vec3 = vec3.create();
+  private startRot: quat = quat.create();
+  private endRot: quat = quat.create();
+
+
   constructor(game: Game, camera: Camera, target: Ship) {
     this.game = game;
     this.camera = camera;
@@ -49,41 +61,69 @@ export class ShipCameraController {
     const targetPos = vec3.create();
     vec3.transformQuat(targetPos, offset, this.target.rotation);
     vec3.add(targetPos, this.target.position, targetPos);
-
     const targetRot = quat.clone(this.target.rotation);
-    quat.rotateY(targetRot, targetRot, Math.PI);
-    if (this.mode === CameraMode.FirstPerson && this.target.getCameraViewConfig().firstPersonPitchDown !== 0) {
-      quat.rotateX(targetRot, targetRot, -this.target.getCameraViewConfig().firstPersonPitchDown);
-    }
-    if (this.mode === CameraMode.ThirdPerson && this.target.getCameraViewConfig().thirdPersonPitchDown !== 0) {
-      quat.rotateX(targetRot, targetRot, -this.target.getCameraViewConfig().thirdPersonPitchDown);
-    }
+    this.camera.lookAt(this.target.position);
 
-    // 第一帧或切换视角时，直接跳转到目标位置和朝向
-    if (this.firstFrame || input.getKeyDown("KeyV")) {
-      vec3.copy(this.camera.position, targetPos);
-      quat.copy(this.camera.rotation, targetRot);
-      vec3.set(this.camera.velocity, 0, 0, 0);
-      vec3.set(this.camera.angularVelocity, 0, 0, 0);
-      this.camera.acceleration = 0;
-      vec3.set(this.camera.angularAcceleration, 0, 0, 0);
-
-      // 切换模式
-      if (input.getKeyDown("KeyV")) {
-        this.mode =
-          this.mode === CameraMode.FirstPerson
-            ? CameraMode.ThirdPerson
-            : CameraMode.FirstPerson;
-      }
+    // 第一帧或切换视角时，启动平滑过渡
+    if (this.firstFrame) {
+      this.transitionTime = 0;
+      this.startPos = vec3.clone(this.camera.position);
+      this.startRot = quat.clone(this.camera.rotation);
+      this.endPos = vec3.clone(targetPos);
+      this.endRot = quat.clone(targetRot);
       this.firstFrame = false;
+      this.inTransition = true;
+      this.camera.lookAt(this.target.position);
       return;
     }
+
+    // 按键V切换模式
+    if (input.getKeyDown("KeyV")) {
+      this.transitionTime = 0;
+      this.startPos = vec3.clone(this.camera.position);
+      this.startRot = quat.clone(this.camera.rotation)
+      // 第一人称、第三人称互换
+      this.mode =
+        this.mode === CameraMode.FirstPerson
+          ? CameraMode.ThirdPerson
+          : CameraMode.FirstPerson;
+
+      // 计算目标点和旋转
+      const offset =
+        this.mode === CameraMode.FirstPerson
+          ? this.target.getCameraViewConfig().cockpitOffset
+          : this.target.getCameraViewConfig().thirdPersonOffset;
+      const targetPos = vec3.create();
+      vec3.transformQuat(targetPos, offset, this.target.rotation);
+      vec3.add(targetPos, this.target.position, targetPos);
+      const targetRot = quat.clone(this.target.rotation);
+      this.camera.lookAt(this.target.position);
+      this.endPos = targetPos;
+      this.endRot = targetRot;
+      this.inTransition = true;
+      return;
+    }
+    // 平滑过渡逻辑
+    if (this.inTransition) {
+      this.transitionTime += delta;
+      const t = Math.min(this.transitionTime / this.transitionDuration, 1);
+      vec3.lerp(this.camera.position, this.startPos, this.endPos, t);
+      quat.slerp(this.camera.rotation, this.startRot, this.endRot, t);
+      this.camera.lookAt(this.target.position);
+
+      if (t >= 1) {
+        this.inTransition = false;
+      }
+    }
+
     this.camera.acceleration = this.target.acceleration;
     vec3.copy(this.camera.angularAcceleration, this.target.angularAcceleration);
-    this.camera.update(delta);
     
-    if (this.target.acceleration > 0)
-      Debug.log(LogChannel.GameLogic, `[CameraController] camera.acceleration=`, this.camera.acceleration, "velocity=", this.camera.velocity);
-      Debug.log(LogChannel.GameLogic, `[Ship] ship.acceleration=`, this.target.acceleration, "velocity=", this.target.velocity);
+    Debug.log(LogChannel.GameLogic, `[CameraController] position=`, this.camera.position);
+    Debug.log(LogChannel.GameLogic, `[CameraController] velocity=`, this.camera.velocity);
+    Debug.log(LogChannel.GameLogic, `[CameraController] acceleration=`, this.camera.acceleration);
+    Debug.log(LogChannel.GameLogic, `[Ship] position=`, this.target.position);
+    Debug.log(LogChannel.GameLogic, `[Ship] velocity=`, this.target.velocity);
+    Debug.log(LogChannel.GameLogic, `[Ship] acceleration=`, this.target.acceleration);
   }
 }

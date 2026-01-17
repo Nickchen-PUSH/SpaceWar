@@ -127,6 +127,7 @@ export abstract class Entity {
     const speed = vec3.length(this.velocity);
     if (speed > this.maxSpeed) {
       vec3.scale(this.velocity, this.velocity, this.maxSpeed / speed);
+      this.acceleration = 0;
     }
 
     // 最小正方向速度为 0，不可以直接倒退
@@ -163,6 +164,11 @@ export abstract class Entity {
       quat.setAxisAngle(deltaRotation, axis, angle);
       quat.multiply(this.rotation, this.rotation, deltaRotation);
     }
+
+    const velocityEpsilon = 1e-4;
+    if (vec3.length(this.velocity) < velocityEpsilon) {
+      vec3.set(this.velocity, 0, 0, 0);
+    }
   }
 
   /**
@@ -171,10 +177,12 @@ export abstract class Entity {
   update(delta: number): void {
     if (!this.active) return;
 
-    // 递归更新子节点
+    // 首先应用物理更新，确保当前实体的位置在本帧是正确的
+    this.applyPhysics(delta);
+
+    // 然后递归更新子节点，子节点可以依赖父节点更新后的状态
     for (const child of this.children) {
       child.update(delta);
     }
-    this.applyPhysics(delta);
   }
 }

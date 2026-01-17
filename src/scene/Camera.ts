@@ -1,4 +1,5 @@
 import { Entity } from "./Entity";
+import { vec3 } from "gl-matrix";
 
 /**
  * Represents the camera in the scene as a game entity.
@@ -27,6 +28,22 @@ export class Camera extends Entity {
     this.far = far;
   }
 
+  public getFront(): vec3 {
+    // 纠正camera方向
+    const front = vec3.fromValues(0, 0, -1);
+    vec3.transformQuat(front, front, this.rotation);
+    vec3.normalize(front, front);
+    return front;
+  }
+
+  protected maxSpeed: number = 100;  // [m/s]
+  protected maxAcceleration: number = 20;  // [m/s²]
+  protected maxAngularSpeed: number = 10.0;  // [rad/s]
+  protected maxAngularAcceleration: vec3 = vec3.fromValues(10, 10, 10);  // [rad/s²] 每个轴的最大角加速度[pitch, yaw, roll]
+  
+  protected drag: number = 0.5;
+  protected angularDrag: number = 0.2;
+
   /**
    * Updates the camera's aspect ratio.
    * @param width The new width.
@@ -36,7 +53,8 @@ export class Camera extends Entity {
     this.aspect = width / height;
   }
 
-  public cameraFollow(delta: number): void {
-    super.applyPhysics(delta);
+  public update(delta: number): void {
+    // 调用父类的更新逻辑以应用物理模拟
+    this.applyPhysics(delta);
   }
 }

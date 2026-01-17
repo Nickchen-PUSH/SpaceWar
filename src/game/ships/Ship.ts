@@ -17,6 +17,7 @@ export abstract class Ship extends Entity {
     protected angularDrag: number = 0.2;
 
     // --- 共有状态 ---
+    public maxHealth: number = 100;
     public health: number = 100;
     public shield: number = 50;
 
