@@ -127,6 +127,7 @@ export abstract class Entity {
     const speed = vec3.length(this.velocity);
     if (speed > this.maxSpeed) {
       vec3.scale(this.velocity, this.velocity, this.maxSpeed / speed);
+      this.acceleration = 0;
     }
 
     // 最小正方向速度为 0，不可以直接倒退
@@ -162,6 +163,11 @@ export abstract class Entity {
       const angle = angularSpeed * delta;
       quat.setAxisAngle(deltaRotation, axis, angle);
       quat.multiply(this.rotation, this.rotation, deltaRotation);
+    }
+
+    const velocityEpsilon = 1e-4;
+    if (vec3.length(this.velocity) < velocityEpsilon) {
+      vec3.set(this.velocity, 0, 0, 0);
     }
   }
 

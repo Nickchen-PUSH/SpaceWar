@@ -15,7 +15,7 @@ type GameState = 'waiting' | 'playing';
 
 export class entryLevel implements Level {
 
-  private cameraController!: FreeCameraController;
+  private cameraController!: ShipCameraController;
   private playerController!: PlayerController;
   private crosshair!: Crosshair;
   private healthBar!: HealthBar;
