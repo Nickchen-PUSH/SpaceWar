@@ -107,11 +107,10 @@ export class ShipCameraController {
 
     // 平滑过渡逻辑
     if (this.inTransition) {
-      if (this.mode === CameraMode.FirstPerson) {
-        // 第一人称不允许滞后，直接贴到座舱
-        this.applyPoseImmediate(this.endPos, this.endRot);
-        this.inTransition = false;
-      } else {
+      // if (this.mode === CameraMode.FirstPerson) {
+      //   this.applyPoseImmediate(this.endPos, this.endRot);
+      //   this.inTransition = false;
+      // } else {
         this.transitionTime += delta;
         const t = Math.min(this.transitionTime / this.transitionDuration, 1);
         vec3.lerp(this.camera.position, this.startPos, this.endPos, t);
@@ -119,7 +118,7 @@ export class ShipCameraController {
         if (t >= 1) {
           this.inTransition = false;
         }
-      }
+      // }
     } else if (this.mode === CameraMode.FirstPerson) {
       // 第一人称：严格绑定到座舱位置，避免加速时穿模
       this.applyPoseImmediate(this.desiredPos, this.desiredRot);
