@@ -39,6 +39,14 @@ export abstract class Ship extends Entity {
         this.inputRoll = roll;
     }
 
+    /**
+     * Forward throttle input in [0, 1].
+     * Negative throttle (brake/reverse intent) returns 0 for effects like thrusters.
+     */
+    public getForwardThrottle01(): number {
+        return Math.max(0, Math.min(1, this.inputThrottle));
+    }
+
     public setFiring(firing: boolean) {
         this.isFiring = firing;
     }
