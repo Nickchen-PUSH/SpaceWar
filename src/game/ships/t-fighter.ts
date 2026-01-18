@@ -1,6 +1,7 @@
 import type { CameraView } from "@game/cameracontrollers";
 import { Ship } from "./Ship";
 import { vec3 } from "gl-matrix";
+import { ThrusterFlame } from "../effects/ThrusterFlame";
 
 export class TFighter extends Ship {
     protected maxSpeed: number = 100;  // [m/s]
@@ -20,10 +21,20 @@ export class TFighter extends Ship {
         super("TFighter", {
             geometryId: 'ship_t-fighter'
         });
-        this.setScale(0.015);
+        this.setScale(0.01);
+
+        // const thrusterFlame = new ThrusterFlame([
+        //     vec3.fromValues(0, 0.1, -1.6),
+        // ]);
+        // thrusterFlame.baseWidth = 0.22;
+        // thrusterFlame.maxLength = 2.4;
+        // thrusterFlame.parent = this;
+        // this.children.push(thrusterFlame);
+        // tie fighter has no visible thruster flame
     }
 
-    protected onUpdate(delta: number): void {
+    protected onUpdate(_delta: number): void {
+        void _delta;
         // 这里可以添加 TFighter 特有的更新逻辑
     }
 }

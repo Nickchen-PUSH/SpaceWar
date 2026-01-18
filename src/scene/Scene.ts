@@ -38,6 +38,12 @@ export class Scene {
     this.mainCamera = new Camera();
   }
 
+  private hasEntity(entity: Entity): boolean {
+    if (this.entities.includes(entity)) return true;
+    if (this.pendingAdd.includes(entity)) return true;
+    return false;
+  }
+
   // =============================
   //  生命周期 (Life Cycle)
   // =============================
@@ -79,9 +85,17 @@ export class Scene {
    * 添加实体到场景
    */
   public add(entity: Entity) {
+    // Avoid duplicates (important when children are also manually added by levels)
+    if (this.hasEntity(entity)) return;
+
     // 放入缓冲队列，下一帧 update 开始时才会真正进入 lists
     // 这样做可以防止在 update 循环中 add 导致死循环或索引错误
     this.pendingAdd.push(entity);
+
+    // Recursively add children (effects / attachments)
+    for (const child of entity.children) {
+      this.add(child);
+    }
   }
 
   /**
@@ -92,6 +106,11 @@ export class Scene {
     entity.active = false;
     // 加入移除队列，下一帧彻底从数组中删除
     this.pendingRemove.add(entity.id);
+
+    // Recursively remove children
+    for (const child of entity.children) {
+      this.remove(child);
+    }
   }
 
   /**

@@ -1,12 +1,9 @@
 import type { Level } from "./level";
 import type { Game } from "@core/Game";
-import { FreeCameraController } from "../cameracontrollers/FreeCameraController";
 import { ShipCameraController } from "../cameracontrollers/ShipCameraController";
 import { vec3 } from "gl-matrix";
-import { Challenger } from "../ships/Challenger";
 import { PlayerController } from "../gamecontrollers/PlayerController";
 import { XFighter } from "../ships/x-fighter";
-import { TrailParticleEmitter } from "../effects/TrailParticleEmitter";
 import { Crosshair } from "../ui/Crosshair";
 import { HealthBar } from "../ui/HealthBar";
 import { StartScreen } from "../ui/StartScreen";
@@ -49,20 +46,20 @@ export class entryLevel implements Level {
     // Create and add the player's ship
     // const challenger = new Challenger();
     // scene.add(challenger);
+    const tfighter = new TFighter();
+    tfighter.position = vec3.fromValues(20, 0, 0);
+    scene.add(tfighter);
+  
     const xfighter = new XFighter();
     scene.add(xfighter);
-
-    // Create and attach the particle emitter
-    const particleEmitter = new TrailParticleEmitter();
-    xfighter.children.push(particleEmitter);
-    particleEmitter.parent = xfighter;
-    scene.add(particleEmitter);
 
     // Set up the free camera controller
     // const cameraController = new FreeCameraController(game, scene.mainCamera);
     this.cameraController = new ShipCameraController(game, scene.mainCamera, xfighter);
     this.playerController = new PlayerController(game);
     this.playerController.possess(xfighter);
+    this.enemyController = new EnemyController(game, xfighter);
+    this.enemyController.addEnemy(tfighter);
 
     // Initialize UI
     this.crosshair = new Crosshair(game);

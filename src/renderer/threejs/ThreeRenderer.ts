@@ -14,6 +14,7 @@ import { TrailParticleEmitter } from "../../game/effects/TrailParticleEmitter";
 import { Debug, LogChannel } from "../../core/Debug";
 import { vec3 } from "gl-matrix";
 import { Ship } from "../../game/ships/Ship";
+import { ThrusterFlame } from "../../game/effects/ThrusterFlame";
 import { UIManager, UIElement, UISprite, UIRect, UIText } from "../../ui";
 
 // --- START RENDERER PARAMS ---
@@ -56,6 +57,10 @@ export class ThreeRenderer implements Renderer {
   private uiCamera: THREE.OrthographicCamera;
   private uiObjects: Map<string, THREE.Object3D> = new Map();
   private uiPlaneGeometry = new THREE.PlaneGeometry(1, 1);
+
+  // FX
+  private flamePlaneGeometry = new THREE.PlaneGeometry(1, 1);
+  private flameTexture?: THREE.Texture;
 
   constructor() {
     this.webglRenderer = null!;
@@ -482,6 +487,17 @@ export class ThreeRenderer implements Renderer {
                 object3d.geometry.dispose();
                 (object3d.material as THREE.Material).dispose();
             }
+        // Thruster flame owns its materials
+        if (entity instanceof ThrusterFlame && object3d instanceof THREE.Group) {
+          const meshes = object3d.userData?.meshes as THREE.Mesh[] | undefined;
+          if (meshes) {
+            for (const mesh of meshes) {
+              if (mesh.material instanceof THREE.Material) {
+                mesh.material.dispose();
+              }
+            }
+          }
+        }
             entity._rendererData = undefined; // Dereference
         }
         return;
@@ -500,6 +516,32 @@ export class ThreeRenderer implements Renderer {
                 sizeAttenuation: true, // Makes particles smaller further away
             });
             object3d = new THREE.Points(geometry, material);
+      } else if (entity instanceof ThrusterFlame) {
+        const group = new THREE.Group();
+
+        const tex = this.getOrCreateFlameTexture();
+        const material = new THREE.MeshBasicMaterial({
+          map: tex,
+          transparent: true,
+          opacity: 1,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          depthTest: true,
+          side: THREE.DoubleSide,
+        });
+        // Keep flame bright under ACES tone mapping.
+        (material as any).toneMapped = false;
+
+        const meshes: THREE.Mesh[] = [];
+        for (let i = 0; i < entity.engineOffsets.length; i++) {
+          const mesh = new THREE.Mesh(this.flamePlaneGeometry, material.clone());
+          mesh.name = `thruster_${i}`;
+          group.add(mesh);
+          meshes.push(mesh);
+        }
+
+        group.userData = { meshes };
+        object3d = group;
         } else if (entity.meshConfig) {
             const template = this.models.get(entity.meshConfig.geometryId);
             if (template) {
@@ -547,11 +589,127 @@ export class ThreeRenderer implements Renderer {
       // 同步位置和旋转
       object3d.position.fromArray(entity.parent!.position);
       object3d.quaternion.fromArray(entity.parent!.rotation);
+    } else if (entity instanceof ThrusterFlame) {
+      const group = object3d as THREE.Group;
+      const parentShip = entity.parent as Ship;
+      if (!parentShip) return;
+
+      // Follow ship transform.
+      group.position.fromArray(parentShip.position);
+      group.quaternion.fromArray(parentShip.rotation);
+      group.scale.set(1, 1, 1);
+
+      const intensity = Math.max(0, Math.min(1, entity.intensity));
+      group.visible = intensity > 0.01;
+      if (!group.visible) return;
+
+      const meshes = group.userData?.meshes as THREE.Mesh[] | undefined;
+      if (!meshes) return;
+
+      const width = entity.baseWidth * (0.6 + 0.8 * intensity);
+      const length = Math.max(0.2, entity.maxLength * intensity);
+
+      // Camera position in the ship-local space (group-local).
+      const invParent = group.quaternion.clone().invert();
+      const cameraLocal = this.camera.position
+        .clone()
+        .sub(group.position)
+        .applyQuaternion(invParent);
+
+      const shipBackLocal = new THREE.Vector3(0, 0, -1);
+      const shipUpLocal = new THREE.Vector3(0, 1, 0);
+
+      for (let i = 0; i < meshes.length; i++) {
+        const mesh = meshes[i];
+        const offset = entity.engineOffsets[i] ?? entity.engineOffsets[0];
+
+        // Center the flame slightly behind the nozzle (along ship back axis).
+        mesh.position.set(
+          offset[0] + shipBackLocal.x * (length * 0.5),
+          offset[1] + shipBackLocal.y * (length * 0.5),
+          offset[2] + shipBackLocal.z * (length * 0.5)
+        );
+        mesh.scale.set(width, length, 1);
+
+        // Oriented billboard:
+        // - normal points to camera
+        // - quad 'up' axis aligns with ship back direction projected onto the billboard plane
+        const toCamera = cameraLocal.clone().sub(mesh.position).normalize();
+
+        // up = project(shipBack) onto plane perpendicular to toCamera
+        const up = shipBackLocal.clone().sub(toCamera.clone().multiplyScalar(shipBackLocal.dot(toCamera)));
+        if (up.lengthSq() < 1e-6) {
+          // Fallback when looking almost exactly along shipBack axis.
+          up.copy(shipUpLocal).sub(toCamera.clone().multiplyScalar(shipUpLocal.dot(toCamera)));
+        }
+        up.normalize();
+
+        const right = new THREE.Vector3().crossVectors(up, toCamera).normalize();
+        // Re-orthonormalize up in case of numerical drift
+        up.crossVectors(toCamera, right).normalize();
+
+        const basis = new THREE.Matrix4().makeBasis(right, up, toCamera);
+        mesh.quaternion.setFromRotationMatrix(basis);
+
+        const mat = mesh.material as THREE.MeshBasicMaterial;
+        mat.opacity = 0.15 + 0.85 * intensity;
+        mat.needsUpdate = false;
+      }
     } else if (object3d) { // For all other standard entities
         object3d.position.fromArray(entity.position);
         object3d.quaternion.fromArray(entity.rotation);
         object3d.scale.fromArray(entity.scale);
     }
+  }
+
+  private getOrCreateFlameTexture(): THREE.Texture {
+    if (this.flameTexture) return this.flameTexture;
+
+    const size = 128;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      // Fallback: a 1x1 white texture
+      const data = new Uint8Array([255, 255, 255, 255]);
+      const tex = new THREE.DataTexture(data, 1, 1, THREE.RGBAFormat);
+      tex.needsUpdate = true;
+      this.flameTexture = tex;
+      return tex;
+    }
+
+    // Radial core + soft tail gradient (top is brighter, bottom fades).
+    ctx.clearRect(0, 0, size, size);
+
+    const grad = ctx.createRadialGradient(size * 0.5, size * 0.35, 0, size * 0.5, size * 0.45, size * 0.6);
+    grad.addColorStop(0.0, "rgba(255,255,255,1.0)");
+    grad.addColorStop(0.25, "rgba(120,200,255,0.9)");
+    grad.addColorStop(0.6, "rgba(60,140,255,0.35)");
+    grad.addColorStop(1.0, "rgba(0,0,0,0.0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+
+    // Add a vertical fade to form a tail-like shape.
+    const vgrad = ctx.createLinearGradient(0, 0, 0, size);
+    vgrad.addColorStop(0.0, "rgba(255,255,255,1.0)");
+    vgrad.addColorStop(0.35, "rgba(255,255,255,0.8)");
+    vgrad.addColorStop(1.0, "rgba(255,255,255,0.0)");
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.fillStyle = vgrad;
+    ctx.fillRect(0, 0, size, size);
+    ctx.globalCompositeOperation = "source-over";
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.needsUpdate = true;
+
+    this.flameTexture = tex;
+    return tex;
   }
 
   public resize(width: number, height: number) {
