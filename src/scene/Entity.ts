@@ -62,7 +62,7 @@ export abstract class Entity {
     if (vec3.distance(this.position, target) < 0.00001) {
       return;
     }
-    mat4.lookAt(TEMP_MAT4, this.position, target, UP_VECTOR);
+    mat4.lookAt(TEMP_MAT4, target, this.position, UP_VECTOR);
     mat4.getRotation(this.rotation, TEMP_MAT4);
     quat.invert(this.rotation, this.rotation);
     Debug.log(LogChannel.System, `Entity ${this.name} is looking at ${target}`);
