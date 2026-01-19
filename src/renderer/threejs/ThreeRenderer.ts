@@ -11,6 +11,7 @@ import { Scene } from "../../scene/Scene";
 import type { Renderer } from "../Renderer";
 import { Entity } from "../../scene/Entity";
 import { TrailParticleEmitter } from "../../game/effects/TrailParticleEmitter";
+import { BulletLaserEmitter } from "../../game/effects/BulletLaserEmitter";
 import { Debug, LogChannel } from "../../core/Debug";
 import { vec3 } from "gl-matrix";
 import { Ship } from "../../game/ships/Ship";
@@ -516,32 +517,46 @@ export class ThreeRenderer implements Renderer {
                 sizeAttenuation: true, // Makes particles smaller further away
             });
             object3d = new THREE.Points(geometry, material);
-      } else if (entity instanceof ThrusterFlame) {
-        const group = new THREE.Group();
+        } else if (entity instanceof BulletLaserEmitter) {
+          const geometry = new THREE.BufferGeometry();
+          const material = new THREE.PointsMaterial({
+            color: 0xff2222,
+            size: 0.12,
+            blending: THREE.AdditiveBlending,
+            transparent: true,
+            opacity: 1.0,
+            depthWrite: false,
+            depthTest: true,
+            sizeAttenuation: true,
+            vertexColors: true,
+          });
+          (material as any).toneMapped = false;
+          object3d = new THREE.Points(geometry, material);
 
-        const tex = this.getOrCreateFlameTexture();
-        const material = new THREE.MeshBasicMaterial({
-          map: tex,
-          transparent: true,
-          opacity: 1,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          depthTest: true,
-          side: THREE.DoubleSide,
-        });
-        // Keep flame bright under ACES tone mapping.
-        (material as any).toneMapped = false;
+        } else if (entity instanceof ThrusterFlame) {
+          const group = new THREE.Group();
+          const tex = this.getOrCreateFlameTexture();
+          const material = new THREE.MeshBasicMaterial({
+            map: tex,
+            transparent: true,
+            opacity: 1,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+            depthTest: true,
+            side: THREE.DoubleSide,
+          });
+          // Keep flame bright under ACES tone mapping.
+          (material as any).toneMapped = false;
 
-        const meshes: THREE.Mesh[] = [];
-        for (let i = 0; i < entity.engineOffsets.length; i++) {
-          const mesh = new THREE.Mesh(this.flamePlaneGeometry, material.clone());
-          mesh.name = `thruster_${i}`;
-          group.add(mesh);
-          meshes.push(mesh);
-        }
-
-        group.userData = { meshes };
-        object3d = group;
+          const meshes: THREE.Mesh[] = [];
+          for (let i = 0; i < entity.engineOffsets.length; i++) {
+            const mesh = new THREE.Mesh(this.flamePlaneGeometry, material.clone());
+            mesh.name = `thruster_${i}`;
+            group.add(mesh);
+            meshes.push(mesh);
+          }
+          group.userData = { meshes };
+          object3d = group;
         } else if (entity.meshConfig) {
             const template = this.models.get(entity.meshConfig.geometryId);
             if (template) {
@@ -587,6 +602,26 @@ export class ThreeRenderer implements Renderer {
       points.geometry.attributes.position.needsUpdate = true;
 
       // 同步位置和旋转
+      object3d.position.fromArray(entity.parent!.position);
+      object3d.quaternion.fromArray(entity.parent!.rotation);
+    } else if (entity instanceof BulletLaserEmitter) {
+      const points = object3d as THREE.Points;
+      const positions = new Float32Array(entity.particles.length * 3);
+      const colors = new Float32Array(entity.particles.length * 3);
+      entity.particles.forEach((p, i) => {
+        positions[i * 3 + 0] = p.position[0];
+        positions[i * 3 + 1] = p.position[1];
+        positions[i * 3 + 2] = p.position[2];
+        // 用 alpha 控制红色亮度
+        colors[i * 3 + 0] = 1.0 * p.alpha; // R
+        colors[i * 3 + 1] = 0.0;           // G
+        colors[i * 3 + 2] = 0.0;           // B
+      });
+      points.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      points.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      points.geometry.attributes.position.needsUpdate = true;
+      points.geometry.attributes.color.needsUpdate = true;
+
       object3d.position.fromArray(entity.parent!.position);
       object3d.quaternion.fromArray(entity.parent!.rotation);
     } else if (entity instanceof ThrusterFlame) {

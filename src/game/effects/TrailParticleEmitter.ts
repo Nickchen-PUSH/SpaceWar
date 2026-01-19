@@ -13,7 +13,7 @@ export class TrailParticleEmitter extends Entity {
   particles: Particle[] = [];
   maxParticles = 5000; 
   
-  private rangeZ = 150; 
+  protected rangeZ = 150; 
   private spreadX = 60; 
   private spreadY = 40;
 

@@ -52,10 +52,12 @@ export class combatLevel implements Level {
     // const challenger = new Challenger();
 
     // scene.add(challenger);
-    const xfighter = new XFighter();
+    const xfighter = new XFighter(game);
     scene.add(xfighter);
+    scene.addShipId(xfighter.id);
 
-    const tfighter = new TFighter();
+    const tfighter = new TFighter(game);
+    scene.addShipId(tfighter.id);
     tfighter.position = vec3.fromValues(20, -20, 80);
     tfighter.lookAt(xfighter.position);
     scene.add(tfighter);

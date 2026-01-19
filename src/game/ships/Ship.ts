@@ -3,9 +3,9 @@ import { Entity } from "../../scene";
 import type { CameraView } from "../cameracontrollers";
 import type { MeshConfig } from "../../scene";
 import { Debug, LogChannel } from "../../core/Debug";
+import type { Game } from "@core/Game";
 
 export abstract class Ship extends Entity {
-
     protected cameraView: CameraView = {
         cockpitOffset: vec3.fromValues(0, 1, 3),
         firstPersonPitchDown: 0.1,
@@ -13,6 +13,8 @@ export abstract class Ship extends Entity {
         thirdPersonPitchDown: 0.2
     }
 
+    protected game: Game;
+    
     protected drag: number = 0.5;
     protected angularDrag: number = 0.2;
 
@@ -20,6 +22,8 @@ export abstract class Ship extends Entity {
     public maxHealth: number = 100;
     public health: number = 100;
     public shield: number = 50;
+    // 碰撞半径（球形）
+    public hitRadius: number = 5.0;
 
     // --- 控制输入信号 (范围 -1.0 到 1.0) ---
     // 这些变量代表了"飞行员"当前的意图
@@ -51,8 +55,9 @@ export abstract class Ship extends Entity {
         this.isFiring = firing;
     }
 
-    constructor(name: string, meshConfig: MeshConfig) {
+    constructor(game: Game, name: string, meshConfig: MeshConfig) {
         super();
+        this.game = game;
         this.name = name;
         this.meshConfig = meshConfig;
     }

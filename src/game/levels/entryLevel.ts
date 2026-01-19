@@ -1,9 +1,11 @@
 import type { Level } from "./level";
 import type { Game } from "@core/Game";
 import { ShipCameraController } from "../cameracontrollers/ShipCameraController";
+import { EnemyController } from "../gamecontrollers/EnemyController";
 import { vec3 } from "gl-matrix";
 import { PlayerController } from "../gamecontrollers/PlayerController";
 import { XFighter } from "../ships/x-fighter";
+import { TFighter } from "../ships/t-fighter";
 import { Crosshair } from "../ui/Crosshair";
 import { HealthBar } from "../ui/HealthBar";
 import { StartScreen } from "../ui/StartScreen";
@@ -14,6 +16,7 @@ export class entryLevel implements Level {
 
   private cameraController!: ShipCameraController;
   private playerController!: PlayerController;
+  private enemyController!: EnemyController;
   private crosshair!: Crosshair;
   private healthBar!: HealthBar;
   private startScreen!: StartScreen;
@@ -46,12 +49,14 @@ export class entryLevel implements Level {
     // Create and add the player's ship
     // const challenger = new Challenger();
     // scene.add(challenger);
-    const tfighter = new TFighter();
+    const tfighter = new TFighter(game);
     tfighter.position = vec3.fromValues(20, 0, 0);
     scene.add(tfighter);
+    scene.addShipId(tfighter.id);
   
-    const xfighter = new XFighter();
+    const xfighter = new XFighter(game);
     scene.add(xfighter);
+    scene.addShipId(xfighter.id);
 
     // Set up the free camera controller
     // const cameraController = new FreeCameraController(game, scene.mainCamera);

@@ -18,6 +18,8 @@ export class Scene {
    */
   public entities: Entity[] = [];
 
+  public ships: string[] = [];
+
   /**  * 场景背景标识符 (可选)
    * 如果不为 null，Renderer 会尝试加载对应的天空盒资源
    */
@@ -99,6 +101,15 @@ export class Scene {
   }
 
   /**
+   * 飞船进行登记
+   */
+  public addShipId(id: string) {
+  if (!this.ships.includes(id)) {
+    this.ships.push(id);
+  }
+}
+
+  /**
    * 从场景移除实体
    */
   public remove(entity: Entity) {
@@ -106,6 +117,8 @@ export class Scene {
     entity.active = false;
     // 加入移除队列，下一帧彻底从数组中删除
     this.pendingRemove.add(entity.id);
+    // 如果是飞船，同时移除
+    this.ships = this.ships.filter(id => id !== entity.id);
 
     // Recursively remove children
     for (const child of entity.children) {
