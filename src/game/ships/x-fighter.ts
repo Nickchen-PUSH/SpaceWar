@@ -1,6 +1,6 @@
 import type { CameraView } from "../cameracontrollers";
 import { Ship } from "./Ship";
-import { Bullet } from "../Bullet";
+import { Bullet } from "../objects/Bullet";
 import { vec3, quat } from "gl-matrix";
 import type { Game } from "@core/Game";
 import { ThrusterFlame } from "../effects/ThrusterFlame";
@@ -27,8 +27,8 @@ export class XFighter extends Ship {
     protected cameraView: CameraView = {
         cockpitOffset: vec3.fromValues(0, 0.85, -0.9),
         firstPersonPitchDown: -0.2,
-        thirdPersonOffset: vec3.fromValues(0, 3, -20),
-        thirdPersonPitchDown: -0.46
+        thirdPersonOffset: vec3.fromValues(0, 4, -15),
+        thirdPersonPitchDown: -0.2
     }
 
     constructor(game: Game) {

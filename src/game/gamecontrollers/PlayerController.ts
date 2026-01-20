@@ -45,8 +45,8 @@ export class PlayerController {
       // --- 鼠标模式 (类似 战争雷霆 / 自由枪骑兵) ---
       // 假设 Input 系统有 getMouseDelta (每帧鼠标移动量)
       const mouse = input.getMouseDelta();
-      // 键盘 Q/E -> yaw
-      yaw = -input.getAxis("KeyQ", "KeyE");
+      // 键盘 A/D -> yaw
+      yaw = -input.getAxis("KeyA", "KeyD");
 
       // 鼠标左右 -> roll
       roll = -mouse.x * this.mouseSensitivity;
@@ -57,7 +57,7 @@ export class PlayerController {
 
     } else {
       // --- 纯键盘模式 ---
-      yaw = -input.getAxis("KeyQ", "KeyE");
+      yaw = -input.getAxis("KeyA", "KeyD");
       pitch = input.getAxisVertical("ArrowDown", "ArrowUp");
       roll = input.getAxis("ArrowLeft", "ArrowRight");
     }
