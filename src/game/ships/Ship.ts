@@ -1,7 +1,7 @@
 import { vec3 } from "gl-matrix";
-import { Entity } from "../../scene";
+import { Entity } from "@scene";
 import type { CameraView } from "../cameracontrollers";
-import type { MeshConfig } from "../../scene";
+import type { MeshConfig } from "@scene";
 import { Debug, LogChannel } from "../../core/Debug";
 import type { Game } from "../../core/Game";
 import { ExplosionEmitter } from "../effects/ExplosionEmitter";

@@ -1,9 +1,9 @@
-import { Entity } from "../scene/Entity";
+import { Entity } from "@scene";
 import { vec3, quat } from "gl-matrix";
-import type { Game } from "../core/Game";
-import type { Ship } from "./ships/Ship";
-import { BulletLaserEmitter } from "./effects/BulletLaserEmitter.ts";
-import { Debug, LogChannel } from "../core/Debug";
+import type { Game } from "../../core/Game.ts";
+import type { Ship } from "../ships/Ship.ts";
+import { BulletLaserEmitter } from "../effects/BulletLaserEmitter.ts";
+import { Debug, LogChannel } from "../../core/Debug.ts";
 
 export class Bullet extends Entity {
   private lifeTime = 2.0;  // 存活时间
@@ -22,29 +22,32 @@ export class Bullet extends Entity {
     position: vec3,
     direction: vec3,
     owner: Ship,
-    game: Game
+    game: Game,
+    damage: number = 10
   ) {
     super();
     this.name = "Bullet";
 
     this.owner = owner;
     this.game = game;
-
+    
     // 子弹是动态实体，但不参与复杂物理
     this.isStatic = false;
     // 渲染设置
     this.meshConfig = null;
     this.visible = true;
-
+    
     vec3.copy(this.position, position);
-
+    
     // ===== 初始高速 =====
-    this.maxSpeed = 110;
-    const bulletSpeed = 110;
+    this.maxSpeed = 300;
+    const bulletSpeed = 300;
     const dir = vec3.create();
+  
+    this.damage = damage;
     vec3.normalize(dir, direction);
     vec3.scale(this.velocity, dir, bulletSpeed);
-
+    
     // 新增：使子弹局部 +Z 对齐 velocity（保证粒子局部Z变换后朝向正确）
     if (vec3.length(this.velocity) > 1e-6) {
       const rotQuat = quat.create();
@@ -116,8 +119,9 @@ export class Bullet extends Entity {
     this.visible = false;
     // 递归销毁所有子节点
     for (const child of this.children) {
-      if (typeof child['destroy'] === 'function') {
-        child['destroy']();
+      const anyChild = child as any;
+      if (typeof anyChild.destroy === "function") {
+        anyChild.destroy();
       } else {
         child.active = false;
         child.visible = false;

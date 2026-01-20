@@ -2,7 +2,6 @@ import './style.css';
 import { Game } from "./core/Game";
 import { AssetLoader } from "./core/AssetLoader";
 import { ThreeRenderer } from "./renderer";
-import { entryLevel } from "./game/levels/entryLevel";
 import { combatLevel } from './game/levels/combatLevel';
 /**
  * 游戏入口函数
@@ -23,6 +22,13 @@ async function bootstrap() {
   loader.add("sky_galaxy", "textures/environment.hdr");
   loader.add("ship_challenger_v1", "models/ship_challenger_v1.gltf");
   loader.add("crosshair", "textures/target.png");
+  loader.add("meteor_a", "models/meteor_a.glb");
+  loader.add("meteor_b", "models/meteor_b.glb");
+  loader.add("meteor_c", "models/meteor_c.glb");
+  loader.add("meteor_d", "models/meteor_d.glb");
+  loader.add("lava_planet", "models/lava_planet.glb");
+  loader.add("mercury_planet", "models/mercury_planet.glb");
+  loader.add("earth", "models/earth.glb");
 
 
   // 设置加载进度回调 (可以在这里更新 DOM 里的进度条)

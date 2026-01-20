@@ -9,6 +9,10 @@ import { TFighter } from "../ships/t-fighter";
 import { Crosshair } from "../ui/Crosshair";
 import { HealthBar } from "../ui/HealthBar";
 import { StartScreen } from "../ui/StartScreen";
+import { Planet } from "../objects/Planet";
+import { Meteor } from "../objects/meteor";
+import type { Scene } from "@scene";
+import { handleCelestialCollisions } from "../collision/CelestialCollision";
 
 type GameState = 'waiting' | 'playing';
 
@@ -41,6 +45,54 @@ export class entryLevel implements Level {
     scene.mainCamera.position[1] = 0;
     scene.mainCamera.position[2] = 20;
     scene.mainCamera.lookAt(vec3.fromValues(0, 0, 0));
+
+    // Add some celestial bodies for ambience (visible on start screen too)
+    this.spawnCelestials(scene);
+  }
+
+  private spawnCelestials(scene: Scene): void {
+    // Planets
+    const earth = new Planet("earth", {
+      position: vec3.fromValues(-40, -10, -120),
+      scale: 1.2,
+      spinSpeed: 0.12,
+      hitRadius: 40,
+    });
+    scene.add(earth);
+
+    const lava = new Planet("lava_planet", {
+      position: vec3.fromValues(55, 20, -180),
+      scale: 0.9,
+      spinSpeed: 0.18,
+      hitRadius: 35,
+    });
+    scene.add(lava);
+
+    // Meteors ring / field
+    const meteorCount = 28;
+    const radius = 85;
+    for (let i = 0; i < meteorCount; i++) {
+      const a = (i / meteorCount) * Math.PI * 2;
+      const r = radius + (Math.random() * 2 - 1) * 18;
+      const y = (Math.random() * 2 - 1) * 18;
+      const pos = vec3.fromValues(Math.cos(a) * r, y, Math.sin(a) * r);
+
+      // Give a subtle tangential drift
+      const tangent = vec3.fromValues(-Math.sin(a), 0, Math.cos(a));
+      vec3.normalize(tangent, tangent);
+      const vel = vec3.create();
+      vec3.scale(vel, tangent, 6 + Math.random() * 6);
+
+      const m = new Meteor(Meteor.randomModelId(), {
+        position: pos,
+        velocity: vel,
+        scale: 0.02 + Math.random() * 0.015,
+        hitRadius: 6,
+        spinSpeed: (Math.random() * 2 - 1) * 0.9,
+        maxDistanceFromOrigin: 600,
+      });
+      scene.add(m);
+    }
   }
 
   private startGame(game: Game) {
@@ -95,5 +147,10 @@ export class entryLevel implements Level {
         if (this.crosshair) this.crosshair.update(delta);
         if (this.healthBar) this.healthBar.update(delta);
     }
+  }
+
+  onPostUpdate(game: Game, delta: number): void {
+    if (this.gameState !== 'playing') return;
+    handleCelestialCollisions(game, delta);
   }
 }
