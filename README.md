@@ -1,5 +1,11 @@
 # SpaceWar
 
+## 部署（GitHub Pages）
+
+- 本仓库已支持用 GitHub Actions 自动部署静态站点到 GitHub Pages：.github/workflows/deploy-pages.yml
+- 启用方式：GitHub 仓库 Settings → Pages → Source 选择 “GitHub Actions”
+- 之后每次 push 到 main 会自动执行：npm ci → npm run build → 部署 dist/
+
 ## 项目框架
 ```
 src/

@@ -5,7 +5,12 @@ import { dirname, resolve } from "node:path";
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const srcDir = resolve(rootDir, "src");
 
+const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1];
+const isGitHubPagesBuild = process.env.GITHUB_PAGES === "true";
+const base = isGitHubPagesBuild && repoName ? `/${repoName}/` : "/";
+
 export default defineConfig({
+  base,
   resolve: {
     alias: {
       // Existing TS path aliases (runtime support)
