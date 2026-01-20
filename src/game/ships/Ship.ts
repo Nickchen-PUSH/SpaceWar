@@ -23,6 +23,7 @@ export abstract class Ship extends Entity {
     public maxHealth: number = 100;
     public health: number = 100;
     public shield: number = 50;
+    public isPlayerControlled: boolean = false;
     // 碰撞半径（球形）
     public hitRadius: number = 5.0;
 

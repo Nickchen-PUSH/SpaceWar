@@ -30,6 +30,11 @@ export class Game {
   private container: HTMLElement | null = null;
   private animationFrameId: number | null = null;
 
+  // =========================================
+  //  Lightweight event bus (HUD/Gameplay)
+  // =========================================
+  private events: EventTarget = new EventTarget();
+
   /**
    * 构造函数：依赖注入
    * @param renderer 具体渲染器的实例
@@ -197,5 +202,20 @@ export class Game {
 
   public getUIManager(): UIManager {
     return this.uiManager;
+  }
+
+  /** Subscribe to game events (e.g., 'hud:hit'). */
+  public on<T = any>(type: string, listener: (ev: CustomEvent<T>) => void): void {
+    this.events.addEventListener(type, listener as unknown as EventListener);
+  }
+
+  /** Unsubscribe from game events. */
+  public off<T = any>(type: string, listener: (ev: CustomEvent<T>) => void): void {
+    this.events.removeEventListener(type, listener as unknown as EventListener);
+  }
+
+  /** Emit a game event. */
+  public emit<T = any>(type: string, detail?: T): void {
+    this.events.dispatchEvent(new CustomEvent(type, { detail }));
   }
 }

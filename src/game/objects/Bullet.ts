@@ -108,6 +108,19 @@ export class Bullet extends Entity {
         (target as any).takeDamage(this.damage);
         Debug.log(LogChannel.System, "Hit!");
 
+        // HUD hit-confirm feedback (only for player-fired bullets)
+        if ((this.owner as any).isPlayerControlled && typeof (this.game as any).emit === "function") {
+          (this.game as any).emit("hud:hit", { targetId: target.id });
+
+          // Kill confirm: if the target got destroyed by this hit
+          const anyTarget = target as any;
+          if (anyTarget.health !== undefined && anyTarget.health <= 0) {
+            (this.game as any).emit("hud:kill", { targetId: target.id });
+          } else if (anyTarget.active === false) {
+            (this.game as any).emit("hud:kill", { targetId: target.id });
+          }
+        }
+
         this.destroy();
         return;
       }
