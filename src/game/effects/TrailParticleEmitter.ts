@@ -11,7 +11,7 @@ interface Particle {
 
 export class TrailParticleEmitter extends Entity {
   particles: Particle[] = [];
-  maxParticles = 5000; 
+  maxParticles = 1000; 
   
   protected rangeZ = 150; 
   private spreadX = 60; 
@@ -36,7 +36,7 @@ export class TrailParticleEmitter extends Entity {
       }
     }
 
-    // 2. 更新粒子
+    // 2. 更新粒子w
     for (let i = 0; i < this.particles.length; i++) {
       const p = this.particles[i];
 

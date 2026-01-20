@@ -216,7 +216,7 @@ export class ThreeRenderer implements Renderer {
     // Initial Setup
     this.setupLighting();
     this.setupPostprocessing();
-    this.setupDebugGUI();
+    // this.setupDebugGUI();
   }
 
   private setupLighting() {
@@ -425,7 +425,7 @@ export class ThreeRenderer implements Renderer {
             mat.needsUpdate = true;
             node.isDirty = false;
         }
-        mat.opacity = 1; // 确保文字不透明
+        mat.opacity = node.opacity;
         mat.color.setHex(0xffffff);
       }
     } else {

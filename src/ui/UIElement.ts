@@ -8,6 +8,10 @@ import { vec2 } from "gl-matrix";
 export abstract class UIElement {
   public id: string;
   public visible: boolean = true;
+
+  // Generic opacity for visuals that support transparency (UIText, UIRect, etc.).
+  // UISprite has its own opacity field and will keep using that.
+  public opacity: number = 1.0;
   
   // Transform
   public position: vec2 = vec2.fromValues(0, 0);

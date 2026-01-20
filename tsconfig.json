@@ -27,7 +27,9 @@
       "@core/*": ["core/*"],
       "@game/*": ["game/*"],
       "@render/*": ["render/*"],
-      "@types/*": ["types/*"]
+      "@types/*": ["types/*"],
+      "@scene": ["scene/index.ts"],
+      "@scene/*": ["scene/*"]
     }
   },
   "include": ["src", "vitest.config.ts"]

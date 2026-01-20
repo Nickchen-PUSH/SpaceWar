@@ -163,11 +163,11 @@ export function handleCelestialCollisions(game: Game, delta: number): void {
       if (body instanceof Planet) {
         applyShipDamageOnce(ship, delta, 18);
       } else if (body instanceof Meteor) {
-        applyShipDamageOnce(ship, delta, 12);
+        applyShipDamageOnce(ship, delta, 5);
         spawnExplosion(scene, body.position);
         body.destroy();
       } else {
-        applyShipDamageOnce(ship, delta, 10);
+        applyShipDamageOnce(ship, delta, 5);
       }
     }
   }

@@ -20,10 +20,15 @@ export class PlayerController {
    * 附身：控制哪艘船
    */
   public possess(ship: Ship) {
+    if (this.target) {
+      this.target.isPlayerControlled = false;
+    }
     this.target = ship;
+    this.target.isPlayerControlled = true;
   }
 
   public update(delta: number) {
+    void delta;
     if (!this.target) return;
 
     const input = this.game.getInput();

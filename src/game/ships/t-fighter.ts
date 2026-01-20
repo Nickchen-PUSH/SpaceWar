@@ -6,8 +6,8 @@ import { Debug, LogChannel } from "@core/Debug";
 import { Bullet } from "@game/objects/Bullet";
 
 export class TFighter extends Ship {
-    protected maxSpeed: number = 100;  // [m/s]
-    protected maxAcceleration: number = 20;  // [m/s²]
+    protected maxSpeed: number = 400;  // [m/s]
+    protected maxAcceleration: number = 40;  // [m/s²]
     protected maxAngularSpeed: number = 5.0;  // [rad/s]
     protected maxAngularAcceleration: vec3 = vec3.fromValues(5, 5, 5);  // [rad/s²] 每个轴的最大角加速度[pitch, yaw, roll]
 
@@ -23,10 +23,10 @@ export class TFighter extends Ship {
     private fireTimer = 0;
 
     protected cameraView: CameraView = {
-        cockpitOffset: vec3.fromValues(0, 0.85, -1),
-        firstPersonPitchDown: 0,
-        thirdPersonOffset: vec3.fromValues(0, 3, -10),
-        thirdPersonPitchDown: 0.2
+        cockpitOffset: vec3.fromValues(0, 0.88, -0.7),
+        firstPersonPitchDown: -0.1,
+        thirdPersonOffset: vec3.fromValues(0, 4, -15),
+        thirdPersonPitchDown: -0.2
     }
 
     constructor(game: Game) {

@@ -41,7 +41,7 @@ export class EnemyController {
   // 目标进入该范围：Patrol -> Chase
   private detectionRange: number = 160;
   // 目标超过该范围：Chase -> Patrol
-  private loseRange: number = 240;
+  private loseRange: number = 360;
   // 足够接近且对准：Chase -> Attack
   private attackRange: number = 120;
   // 认为“过近”的距离：用于触发 Evade 以及接近减速
@@ -148,6 +148,14 @@ export class EnemyController {
   public removeEnemy(enemy: Ship) {
     this.enemies = this.enemies.filter(e => e.id !== enemy.id);
     this.enemyStates.delete(enemy.id);
+  }
+
+  public getEnemies(): readonly Ship[] {
+    return this.enemies;
+  }
+
+  public getAliveEnemies(): Ship[] {
+    return this.enemies.filter(e => e.active && e.visible);
   }
 
   update(delta: number) {
