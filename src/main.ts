@@ -21,7 +21,10 @@ async function bootstrap() {
   loader.add("ship_t-fighter", "models/star_wars_tieln_fighter.glb");
   loader.add("sky_galaxy", "textures/environment.hdr");
   loader.add("ship_challenger_v1", "models/ship_challenger_v1.gltf");
-  loader.add("crosshair", "textures/target.png");
+  loader.add("crosshair", "textures/crosshair019.png");
+  loader.add("crosshair-hit", "textures/crosshair018.png");
+  loader.add("white_block", "textures/crosshair026.png")
+  loader.add("mav_logo", "textures/mavlogo.png");
   loader.add("meteor_a", "models/meteor_a.glb");
   loader.add("meteor_b", "models/meteor_b.glb");
   loader.add("meteor_c", "models/meteor_c.glb");
@@ -31,13 +34,14 @@ async function bootstrap() {
   loader.add("earth", "models/earth.glb");
 
 
-  // 设置加载进度回调 (可以在这里更新 DOM 里的进度条)
+  // 设置加载进度回调：更新黑屏加载条 (DOM)
+  const loadingBar = document.getElementById("loading-bar");
+  const loadingPercent = document.getElementById("loading-percent");
   loader.onProgress = (progress: number) => {
-    const percentage = Math.round(progress * 100);
+    const percentage = Math.max(0, Math.min(100, Math.round(progress * 100)));
     console.log(`[Loading] ${percentage}%`);
-
-    // 如果你有 loading DOM 元素：
-    // document.getElementById('loading-bar')!.style.width = `${percentage}%`;
+    if (loadingBar) (loadingBar as HTMLElement).style.width = `${percentage}%`;
+    if (loadingPercent) loadingPercent.textContent = `${percentage}%`;
   };
 
   try {
