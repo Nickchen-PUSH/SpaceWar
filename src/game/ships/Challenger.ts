@@ -1,4 +1,5 @@
 import type { CameraView } from "@game/cameracontrollers";
+import type { Game } from "@core/Game";
 import { Ship } from "./Ship";
 import { vec3 } from "gl-matrix";
 
@@ -16,13 +17,14 @@ export class Challenger extends Ship {
         thirdPersonPitchDown: 0.2
     }
 
-    constructor() {
-        super("Challenger", {
+    constructor(game: Game) {
+        super(game, "Challenger", {
             geometryId: 'ship_challenger_v1'
         });
     }
 
     protected onUpdate(delta: number): void {
+        void delta;
         // 这里可以添加 Challenger 特有的更新逻辑
     }
 }

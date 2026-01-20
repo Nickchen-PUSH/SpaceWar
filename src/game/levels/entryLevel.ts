@@ -6,9 +6,8 @@ import { vec3 } from "gl-matrix";
 import { PlayerController } from "../gamecontrollers/PlayerController";
 import { XFighter } from "../ships/x-fighter";
 import { TFighter } from "../ships/t-fighter";
-import { Crosshair } from "../ui/Crosshair";
-import { HealthBar } from "../ui/HealthBar";
 import { StartScreen } from "../ui/StartScreen";
+import { HUD } from "../ui/HUD";
 import { Planet } from "../objects/Planet";
 import { Meteor } from "../objects/meteor";
 import type { Scene } from "@scene";
@@ -21,9 +20,8 @@ export class entryLevel implements Level {
   private cameraController!: ShipCameraController;
   private playerController!: PlayerController;
   private enemyController!: EnemyController;
-  private crosshair!: Crosshair;
-  private healthBar!: HealthBar;
   private startScreen!: StartScreen;
+  private hud!: HUD;
   
   private gameState: GameState = 'waiting';
 
@@ -119,16 +117,13 @@ export class entryLevel implements Level {
     this.enemyController.addEnemy(tfighter);
 
     // Initialize UI
-    this.crosshair = new Crosshair(game);
-    this.healthBar = new HealthBar(game);
-    this.healthBar.setTarget(xfighter);
+    this.hud = new HUD(game, xfighter, this.enemyController);
   }
 
   onExit(): void {
     console.log("Exiting Entry Level");
-    if (this.crosshair) this.crosshair.destroy();
-    if (this.healthBar) this.healthBar.destroy();
     if (this.startScreen) this.startScreen.destroy();
+    if (this.hud) this.hud.destroy();
   }
 
   onUpdate(game: Game, delta: number): void {
@@ -144,8 +139,7 @@ export class entryLevel implements Level {
     if (this.gameState === 'playing') {
         this.cameraController.update(delta);
         this.playerController.update(delta);
-        if (this.crosshair) this.crosshair.update(delta);
-        if (this.healthBar) this.healthBar.update(delta);
+      if (this.hud) this.hud.update(delta);
     }
   }
 

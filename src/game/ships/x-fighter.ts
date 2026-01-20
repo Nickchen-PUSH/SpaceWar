@@ -1,7 +1,7 @@
 import type { CameraView } from "../cameracontrollers";
 import { Ship } from "./Ship";
 import { Bullet } from "../objects/Bullet";
-import { vec3, quat } from "gl-matrix";
+import { vec3 } from "gl-matrix";
 import type { Game } from "@core/Game";
 import { ThrusterFlame } from "../effects/ThrusterFlame";
 import { TrailParticleEmitter } from "../effects/TrailParticleEmitter";

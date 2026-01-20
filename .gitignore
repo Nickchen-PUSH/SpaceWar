@@ -3,6 +3,7 @@ logs
 *.log
 
 # public
+dist
 
 # Editor directories and files
 .vscode/

@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { HDRLoader } from "three/examples/jsm/Addons.js";
-import * as dat from "dat.gui";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
@@ -216,7 +215,6 @@ export class ThreeRenderer implements Renderer {
     // Initial Setup
     this.setupLighting();
     this.setupPostprocessing();
-    // this.setupDebugGUI();
   }
 
   private setupLighting() {
@@ -244,25 +242,6 @@ export class ThreeRenderer implements Renderer {
     this.composer = new EffectComposer(this.webglRenderer);
     this.composer.addPass(renderPass);
     this.composer.addPass(this.bloomPass);
-  }
-
-  private setupDebugGUI() {
-    // Only init GUI in debug mode or if explicitly requested
-    const gui = new dat.GUI();
-    gui.close(); // Closed by default
-
-    const lighting = gui.addFolder("Lighting");
-    lighting.add(params, "envMapIntensity", 0, 3).name("Env Intensity").onChange(() => this.updateAllMaterials());
-    lighting.add(params, "directionalLightIntensity", 0, 10).name("Sun Intensity").onChange((value) => {
-      if (this.directionalLight) {
-        this.directionalLight.intensity = value;
-      }
-    });
-
-    const bloom = gui.addFolder("Bloom");
-    bloom.add(params, "bloomThreshold", 0.0, 1.0).name("Threshold").onChange(value => this.bloomPass && (this.bloomPass.threshold = value));
-    bloom.add(params, "bloomStrength", 0.0, 3.0).name("Strength").onChange(value => this.bloomPass && (this.bloomPass.strength = value));
-    bloom.add(params, "bloomRadius", 0.0, 1.0).name("Radius").onChange(value => this.bloomPass && (this.bloomPass.radius = value));
   }
 
   public render(scene: Scene, uiManager?: UIManager) {

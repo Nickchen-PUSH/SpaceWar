@@ -1,5 +1,4 @@
 import { UIElement } from "./UIElement";
-import { vec4 } from "gl-matrix";
 
 export class UIText extends UIElement {
   public text: string = "";

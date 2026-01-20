@@ -179,11 +179,18 @@ export class Input {
         // 简单的记录 clientX/Y，这是相对于浏览器视口的
         this.deltaX = event.movementX ?? (event.clientX - this.lastMouseX);
         this.deltaY = event.movementY ?? (event.clientY - this.lastMouseY);
-        
+
         this.lastMouseX = event.clientX;
         this.lastMouseY = event.clientY;
-        this.mouseX = event.clientX;
-        this.mouseY = event.clientY;
+
+        if (this.target instanceof HTMLElement) {
+            const rect = this.target.getBoundingClientRect();
+            this.mouseX = event.clientX - rect.left;
+            this.mouseY = event.clientY - rect.top;
+        } else {
+            this.mouseX = event.clientX;
+            this.mouseY = event.clientY;
+        }
 
         Debug.log(LogChannel.Input, `Mouse Move: deltaX=${this.deltaX}, deltaY=${this.deltaY}`);
     };

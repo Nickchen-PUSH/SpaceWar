@@ -1,7 +1,6 @@
 import { UIRect, UIElement } from "../../ui";
 import { Game } from "../../core/Game";
 import { Ship } from "../ships/Ship";
-import { vec4 } from "gl-matrix";
 
 export class HealthBar {
   private container: UIElement;
@@ -45,6 +44,7 @@ export class HealthBar {
   }
 
   public update(delta: number) {
+    void delta;
     if (!this.target) return;
 
     // 1. 更新血条长度

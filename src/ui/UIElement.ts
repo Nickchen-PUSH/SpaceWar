@@ -72,5 +72,7 @@ export abstract class UIElement {
     }
   }
 
-  protected onUpdate(delta: number): void {}
+  protected onUpdate(delta: number): void {
+    void delta;
+  }
 }
