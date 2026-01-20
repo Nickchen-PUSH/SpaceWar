@@ -12,7 +12,8 @@ import type { Scene } from "@scene";
 import { Planet } from "../objects/Planet";
 import { handleCelestialCollisions } from "../collision/CelestialCollision";
 import { Meteor } from "@game/objects/meteor";
-type GameState = 'waiting' | 'playing';
+import { GameOverScreen } from "../ui/GameOverScreen";
+type GameState = 'waiting' | 'playing' | 'failed';
 
 type EncounterPhase = 'intermission' | 'spawning' | 'cleanup' | 'victory';
 
@@ -23,6 +24,7 @@ export class combatLevel implements Level {
   private enemyController!: EnemyController;
   private startScreen!: StartScreen;
   private hud!: HUD;
+  private gameOverScreen?: GameOverScreen;
   private gameState: GameState = 'waiting';
 
   // --- Encounter pacing ---
@@ -44,9 +46,13 @@ export class combatLevel implements Level {
     console.log("Entering Entry Level");
     const scene = game.getScene();
 
+    // Ensure a clean restart when re-entering this level.
+    scene.clear();
+
     scene.background = "sky_galaxy";
     this.startScreen = new StartScreen(game);
     this.gameState = 'waiting';
+    this.gameOverScreen = undefined;
     // Set the initial camera position and orientation for this level
     scene.mainCamera.position[0] = 0;
     scene.mainCamera.position[1] = 0;
@@ -148,6 +154,7 @@ export class combatLevel implements Level {
     console.log("Exiting Combat Level");
     if (this.startScreen) this.startScreen.destroy();
     if (this.hud) this.hud.destroy();
+    if (this.gameOverScreen) this.gameOverScreen.destroy();
   }
 
   initMap(scene: Scene){
@@ -464,7 +471,33 @@ export class combatLevel implements Level {
       return;
     }
 
+    if (this.gameState === 'failed') {
+      this.gameOverScreen?.update(delta);
+
+      // Ask whether to retry: explicit confirm key.
+      // if (game.getInput().getKeyDown('KeyR')) {
+      //   game.levelManager.changeLevel(new combatLevel());
+      // }
+      return;
+    }
+
     if (this.gameState === 'playing') {
+      // Failure condition: player ship destroyed.
+      if (!this.playerShip || !this.playerShip.active || this.playerShip.health <= 0) {
+        // Remove HUD immediately on game over.
+        if (this.hud) {
+          this.hud.destroy();
+          // HUD is created only after startGame(); make it falsy to avoid further updates.
+          this.hud = undefined as unknown as HUD;
+        }
+        if (!this.gameOverScreen) {
+          // HUD may self-destroy when the player dies; show a dedicated overlay instead.
+          this.gameOverScreen = new GameOverScreen(game);
+        }
+        this.gameState = 'failed';
+        return;
+      }
+
       this.cameraController.update(delta);
       this.playerController.update(delta);
       this.enemyController.update(delta);
