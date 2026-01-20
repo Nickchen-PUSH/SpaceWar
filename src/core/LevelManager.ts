@@ -36,4 +36,13 @@ export class LevelManager {
     }
   }
 
+  /**
+   * Scene 更新后调用（例如：碰撞检测、后处理逻辑）
+   */
+  public postUpdate(delta: number) {
+    if (this.currentLevel?.onPostUpdate) {
+      this.currentLevel.onPostUpdate(this.game, delta);
+    }
+  }
+
 }
