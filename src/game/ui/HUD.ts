@@ -172,6 +172,13 @@ export class HUD {
   private readonly lineHeading: UIText;
   private readonly lineEnemies: UIText;
 
+  // --- Key guide (right side) ---
+  private readonly keyGuideBg: UIRect;
+  private readonly keyGuideTitle: UIText;
+  private readonly keyGuideLines: UIText[];
+  private readonly keyGuideWidth: number = 280;
+  private readonly keyGuideRow: number = 20;
+
   // Optional label injected by level logic (waves, reinforcements, etc.).
   private waveText: string | null = null;
 
@@ -239,6 +246,30 @@ export class HUD {
     this.root.addChild(this.lineSpeed);
     this.root.addChild(this.lineHeading);
     this.root.addChild(this.lineEnemies);
+
+    // --- Key guide (top-right) ---
+    this.keyGuideBg = new UIRect(0.06, 0.06, 0.08, 0.55);
+    this.keyGuideBg.setSize(this.keyGuideWidth, 180);
+    this.root.addChild(this.keyGuideBg);
+
+    this.keyGuideTitle = new UIText("按键指引", 16);
+    this.keyGuideTitle.setColor("#e6edf3");
+    this.root.addChild(this.keyGuideTitle);
+
+    const lines = [
+      "W / S: 油门 (加速 / 减速)",
+      "A / D: 偏航 (Yaw)",
+      "↑ / ↓: 俯仰 (Pitch)",
+      "← / →: 翻滚 (Roll)",
+      "Space: 开火",
+    ];
+
+    this.keyGuideLines = lines.map((t) => {
+      const line = new UIText(t, 14);
+      line.setColor("#e6edf3");
+      this.root.addChild(line);
+      return line;
+    });
 
     // --- Crosshair ---
     this.crosshair = new UISprite("crosshair");
@@ -341,11 +372,40 @@ export class HUD {
 
     this.updatePanelText();
     this.layoutPanel(cams.uiCamera);
+    this.layoutKeyGuide(cams.uiCamera);
     this.layoutHealthBar(cams.uiCamera);
     this.updateHealthBar();
     this.updateCrosshair(cams.uiCamera);
     this.updateCenterMessage(delta);
     this.updateEnemyMarkers(cams);
+  }
+
+  private layoutKeyGuide(uiCamera: THREE.OrthographicCamera): void {
+    const margin = 18;
+    const panelW = this.keyGuideBg.size[0];
+
+    const row = this.keyGuideRow;
+    const titleTopPadding = 22;
+    const lineTopPadding = 46;
+    const bottomPadding = 16;
+
+    // Auto-fit panel height to content.
+    const panelH = lineTopPadding + this.keyGuideLines.length * row + bottomPadding;
+    this.keyGuideBg.setSize(panelW, panelH);
+
+    const x = uiCamera.right - panelW / 2 - margin;
+    const y = uiCamera.top - panelH / 2 - margin;
+    this.keyGuideBg.setPosition(x, y);
+
+    const left = x - panelW / 2 + 14;
+    const top = y + panelH / 2;
+
+    this.keyGuideTitle.setPosition(left + this.keyGuideTitle.size[0] / 2, top - titleTopPadding);
+
+    for (let i = 0; i < this.keyGuideLines.length; i++) {
+      const line = this.keyGuideLines[i];
+      line.setPosition(left + line.size[0] / 2, top - lineTopPadding - i * row);
+    }
   }
 
   private updateCenterMessage(delta: number): void {
@@ -386,8 +446,8 @@ export class HUD {
     this.centerMsgRoot.setScale(s, s);
 
     // Layout: background box + text centered.
-    const paddingX = 44;
-    const paddingY = 26;
+    const paddingX = 2;
+    const paddingY = 2;
     const w = Math.max(this.centerMsgText.size[0], this.centerMsgShadow.size[0]);
     const h = Math.max(this.centerMsgText.size[1], this.centerMsgShadow.size[1]);
     this.centerMsgBg.setSize(w + paddingX, h + paddingY);
