@@ -2,6 +2,7 @@ import { Game } from "../../core/Game";
 import { Ship } from "../ships/Ship";
 import { vec3, quat } from "gl-matrix";
 import { Debug, LogChannel } from "../../core/Debug";
+import { Planet } from "@game/objects/Planet";
 
 const EnemyState = {
   Patrol: "Patrol",
@@ -23,6 +24,7 @@ type EnemyStateData = {
 };
 
 export class EnemyController {
+  private game: Game;
   private target: Ship;
   private enemies: Ship[] = [];
   private enemyStates: Map<string, EnemyStateData> = new Map();
@@ -41,7 +43,7 @@ export class EnemyController {
   // 目标超过该范围：Chase -> Patrol
   private loseRange: number = 240;
   // 足够接近且对准：Chase -> Attack
-  private attackRange: number = 90;
+  private attackRange: number = 120;
   // 认为“过近”的距离：用于触发 Evade 以及接近减速
   private tooCloseRange: number = 40;
   // tooCloseRange 的提前触发倍率（补偿惯性，避免冲脸）
@@ -63,7 +65,7 @@ export class EnemyController {
   // 射击最小间隔
   private fireInterval: number = 0.35;
   // Evade 持续多久后（且距离足够）才考虑回到 Chase
-  private evadeDuration: number = 1.2;
+  private evadeDuration: number = 3;
   // Patrol 随机换向间隔 [min, max]
   private patrolChangeMin: number = 1.2;
   private patrolChangeMax: number = 2.6;
@@ -86,7 +88,7 @@ export class EnemyController {
   private orbitStrengthMin: number = 0.18;
   private orbitStrengthMax: number = 0.55;
   // Attack 时主要保持对准，但加入少量侧向漂移
-  private attackOrbitStrength: number = 0.15;
+  private attackOrbitStrength: number = 0.05;
   // Attack 时只有在“已经基本对准”时才加侧漂
   private attackOrbitMinFacingDot: number = 0.6;
 
@@ -108,10 +110,15 @@ export class EnemyController {
   // Evade -> Chase：evadeDuration 之后且 distance > tooCloseRange * factor
   private evadeReengageDistanceFactor: number = 1.5;
 
+  // --- Planet 避障 ---
+  private planetAvoidMargin: number = 140; // extra distance beyond planet radius
+  private planetAvoidEmergencyMargin: number = 40;
+  private planetAvoidStrength: number = 1.25;
+
   private readonly worldUp: vec3 = vec3.fromValues(0, 1, 0);
 
   constructor(game: Game, target: Ship) {
-    void game;
+    this.game = game;
     this.target = target;
   }
 
@@ -231,7 +238,7 @@ export class EnemyController {
           const throttle = this.computeApproachThrottle(distance, facingDot);
 
           // 在接近目标时做绕飞/侧切，让行为更像 dogfight。
-          const desiredDir = this.computeOrbitDesiredDir(toTarget, distance, facingDot, state.orbitSign);
+          const desiredDir = this.applyPlanetAvoidance(enemy, this.computeOrbitDesiredDir(toTarget, distance, facingDot, state.orbitSign));
           this.steerTowards(enemy, desiredDir, throttle);
           enemy.setFiring(false);
           break;
@@ -247,7 +254,7 @@ export class EnemyController {
           }
 
           const throttle = this.computeApproachThrottle(distance, facingDot);
-          const desiredDir = this.computeAttackDesiredDir(toTarget, distance, facingDot, state.orbitSign);
+          const desiredDir = this.applyPlanetAvoidance(enemy, this.computeAttackDesiredDir(toTarget, distance, facingDot, state.orbitSign));
           this.steerTowards(enemy, desiredDir, throttle);
           const canFire = facingDot > this.fireFacingDot && state.fireCooldown <= 0;
           if (canFire) {
@@ -268,7 +275,7 @@ export class EnemyController {
           const away = vec3.create();
           vec3.scale(away, toTarget, -1);
           // Evade 是强动作：全油门快速拉开距离。
-          this.steerTowards(enemy, away, 1);
+          this.steerTowards(enemy, this.applyPlanetAvoidance(enemy, away), 1);
           enemy.setFiring(false);
           break;
         }
@@ -310,6 +317,48 @@ export class EnemyController {
       yaw,
       roll
     );
+  }
+
+  private applyPlanetAvoidance(enemy: Ship, desiredDirWorld: vec3): vec3 {
+    const planets = this.game.getScene().entities.filter(e => e.active && e instanceof Planet) as Planet[];
+    if (planets.length === 0) return desiredDirWorld;
+
+    // Emergency: if too close to a planet, force fly away.
+    for (const p of planets) {
+      const toEnemy = vec3.create();
+      vec3.subtract(toEnemy, enemy.position, p.position);
+      const dist = vec3.length(toEnemy);
+      const dangerDist = p.hitRadius + this.planetAvoidEmergencyMargin;
+      if (dist > 1e-6 && dist < dangerDist) {
+        vec3.scale(toEnemy, toEnemy, 1 / dist);
+        return toEnemy;
+      }
+    }
+
+    const avoid = vec3.create();
+    for (const p of planets) {
+      const toEnemy = vec3.create();
+      vec3.subtract(toEnemy, enemy.position, p.position);
+      const dist = vec3.length(toEnemy);
+      if (dist < 1e-6) continue;
+
+      const avoidDist = p.hitRadius + this.planetAvoidMargin;
+      if (dist >= avoidDist) continue;
+
+      // Quadratic falloff: closer => stronger
+      const t = 1 - this.clamp(dist / avoidDist, 0, 1);
+      const strength = (t * t) * this.planetAvoidStrength;
+      vec3.scale(toEnemy, toEnemy, 1 / dist);
+      vec3.scaleAndAdd(avoid, avoid, toEnemy, strength);
+    }
+
+    if (vec3.length(avoid) < 1e-6) return desiredDirWorld;
+
+    const combined = vec3.create();
+    vec3.add(combined, desiredDirWorld, avoid);
+    if (vec3.length(combined) < 1e-6) return desiredDirWorld;
+    vec3.normalize(combined, combined);
+    return combined;
   }
 
   private worldToLocalDir(enemy: Ship, direction: vec3): vec3 {
