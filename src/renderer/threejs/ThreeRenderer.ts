@@ -17,6 +17,7 @@ import { vec3 } from "gl-matrix";
 import { Ship } from "../../game/ships/Ship";
 import { ThrusterFlame } from "../../game/effects/ThrusterFlame";
 import { UIManager, UIElement, UISprite, UIRect, UIText } from "../../ui";
+import { ExplosionEmitter } from "../../game/effects/ExplosionEmitter"; // { changed code }
 
 // --- START RENDERER PARAMS ---
 const params = {
@@ -62,6 +63,9 @@ export class ThreeRenderer implements Renderer {
   // FX
   private flamePlaneGeometry = new THREE.PlaneGeometry(1, 1);
   private flameTexture?: THREE.Texture;
+
+  // Explosion texture cache
+  private explosionTexture?: THREE.Texture;
 
   constructor() {
     this.webglRenderer = null!;
@@ -483,22 +487,40 @@ export class ThreeRenderer implements Renderer {
     if (!entity.visible) {
         if (object3d) {
             this.threeScene.remove(object3d);
-            // If it's a particle emitter, we own the geometry/material and should clean it up
+            // cleanup for particle groups (Explosion now uses Group)
             if (entity instanceof TrailParticleEmitter && object3d instanceof THREE.Points) {
                 object3d.geometry.dispose();
                 (object3d.material as THREE.Material).dispose();
+            } else if (entity instanceof BulletLaserEmitter && object3d instanceof THREE.Points) {
+                object3d.geometry.dispose();
+                (object3d.material as THREE.Material).dispose();
+            } else if (entity instanceof ExplosionEmitter) {
+                // Explosion may be a Group with Points + Sprite
+                if (object3d instanceof THREE.Group) {
+                    for (const child of object3d.children) {
+                        if (child instanceof THREE.Points) {
+                            child.geometry.dispose();
+                            (child.material as THREE.Material).dispose();
+                        } else if (child instanceof THREE.Sprite) {
+                            (child.material as THREE.Material).dispose();
+                        } else if ((child as any).material instanceof THREE.Material) {
+                            ((child as any).material as THREE.Material).dispose();
+                        }
+                    }
+                } else if (object3d instanceof THREE.Points) {
+                    object3d.geometry.dispose();
+                    (object3d.material as THREE.Material).dispose();
+                }
+            } else if (entity instanceof ThrusterFlame && object3d instanceof THREE.Group) {
+                const meshes = object3d.userData?.meshes as THREE.Mesh[] | undefined;
+                if (meshes) {
+                    for (const mesh of meshes) {
+                        if (mesh.material instanceof THREE.Material) {
+                            mesh.material.dispose();
+                        }
+                    }
+                }
             }
-        // Thruster flame owns its materials
-        if (entity instanceof ThrusterFlame && object3d instanceof THREE.Group) {
-          const meshes = object3d.userData?.meshes as THREE.Mesh[] | undefined;
-          if (meshes) {
-            for (const mesh of meshes) {
-              if (mesh.material instanceof THREE.Material) {
-                mesh.material.dispose();
-              }
-            }
-          }
-        }
             entity._rendererData = undefined; // Dereference
         }
         return;
@@ -557,6 +579,39 @@ export class ThreeRenderer implements Renderer {
           }
           group.userData = { meshes };
           object3d = group;
+        } else if (entity instanceof ExplosionEmitter) { // { changed code }
+            // Create Group that contains Points (particles) + Sprite (expanding shock)
+            const group = new THREE.Group();
+
+            const geometry = new THREE.BufferGeometry();
+            const material = new THREE.PointsMaterial({
+                size: 1.0,
+                vertexColors: true,
+                map: this.getOrCreateExplosionTexture(),
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                depthWrite: false,
+                depthTest: true,
+                sizeAttenuation: true,
+            });
+            (material as any).toneMapped = false;
+            const points = new THREE.Points(geometry, material);
+            group.add(points);
+
+            // Shock sprite (billboard) to give a smooth ring/flash
+            const spriteMat = new THREE.SpriteMaterial({
+                map: this.getOrCreateExplosionTexture(),
+                color: 0xffffff,
+                blending: THREE.AdditiveBlending,
+                transparent: true,
+                depthWrite: false,
+            });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.renderOrder = 999;
+            group.add(sprite);
+
+            group.userData = { points, sprite };
+            object3d = group;
         } else if (entity.meshConfig) {
             const template = this.models.get(entity.meshConfig.geometryId);
             if (template) {
@@ -690,6 +745,44 @@ export class ThreeRenderer implements Renderer {
         mat.opacity = 0.15 + 0.85 * intensity;
         mat.needsUpdate = false;
       }
+    } else if (entity instanceof ExplosionEmitter) { // { changed code }
+      const group = object3d as THREE.Group;
+      const points = group.userData.points as THREE.Points;
+      const sprite = group.userData.sprite as THREE.Sprite;
+
+      // Build position/color arrays (reuse typed arrays each frame would be better; keep simple)
+      const count = entity.particles.length;
+      const positions = new Float32Array(count * 3);
+      const colors = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        const p = entity.particles[i];
+        positions[i * 3 + 0] = p.position[0];
+        positions[i * 3 + 1] = p.position[1];
+        positions[i * 3 + 2] = p.position[2];
+
+        // premultiply color by alpha to help additive look
+        colors[i * 3 + 0] = p.color[0] * p.alpha;
+        colors[i * 3 + 1] = p.color[1] * p.alpha;
+        colors[i * 3 + 2] = p.color[2] * p.alpha;
+      }
+      points.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      points.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      points.geometry.attributes.position.needsUpdate = true;
+      points.geometry.attributes.color.needsUpdate = true;
+
+      // Tune global point size: larger for "core-heavy" scenes, smaller for many sparks
+      let coreCount = 0;
+      for (const p of entity.particles) if (p.kind === 'core') coreCount++;
+      (points.material as THREE.PointsMaterial).size = coreCount > 20 ? 1.6 : 0.9;
+
+      // Position the whole group at entity.position (particles are local to emitter)
+      group.position.fromArray(entity.position);
+      group.quaternion.fromArray(entity.rotation);
+
+      // Sprite shock: scale with shockRadius and fade by shockAge/shockLife
+      const shockScale = Math.max(0.0001, entity.shockRadius);
+      sprite.scale.set(shockScale, shockScale, 1);
+      (sprite.material as THREE.SpriteMaterial).opacity = Math.max(0, 1 - entity.shockAge / entity.shockLife);
     } else if (object3d) { // For all other standard entities
         object3d.position.fromArray(entity.position);
         object3d.quaternion.fromArray(entity.rotation);
@@ -744,6 +837,57 @@ export class ThreeRenderer implements Renderer {
     tex.needsUpdate = true;
 
     this.flameTexture = tex;
+    return tex;
+  }
+
+  private getOrCreateExplosionTexture(): THREE.Texture {
+    if (this.explosionTexture) return this.explosionTexture;
+
+    const size = 256;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      const data = new Uint8Array([255, 255, 255, 255]);
+      const tex = new THREE.DataTexture(data, 1, 1, THREE.RGBAFormat);
+      tex.needsUpdate = true;
+      this.explosionTexture = tex;
+      return tex;
+    }
+
+    ctx.clearRect(0, 0, size, size);
+
+    // core radial gradient (white -> yellow -> orange -> transparent)
+    const grad = ctx.createRadialGradient(size * 0.5, size * 0.5, 0, size * 0.5, size * 0.5, size * 0.5);
+    grad.addColorStop(0.0, "rgba(255,255,255,1.0)");
+    grad.addColorStop(0.25, "rgba(255,220,120,0.95)");
+    grad.addColorStop(0.5, "rgba(255,140,50,0.8)");
+    grad.addColorStop(0.9, "rgba(60,20,10,0.12)");
+    grad.addColorStop(1.0, "rgba(0,0,0,0.0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+
+    // subtle noise / speckles for visual richness
+    for (let i = 0; i < 120; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const r = Math.random() * 2;
+      ctx.fillStyle = `rgba(255,${180 + Math.round(Math.random() * 60)},${30 + Math.round(Math.random() * 100)},${0.06 + Math.random() * 0.14})`;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.needsUpdate = true;
+
+    this.explosionTexture = tex;
     return tex;
   }
 

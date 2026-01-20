@@ -3,7 +3,8 @@ import { Entity } from "../../scene";
 import type { CameraView } from "../cameracontrollers";
 import type { MeshConfig } from "../../scene";
 import { Debug, LogChannel } from "../../core/Debug";
-import type { Game } from "@core/Game";
+import type { Game } from "../../core/Game";
+import { ExplosionEmitter } from "../effects/ExplosionEmitter";
 
 export abstract class Ship extends Entity {
     protected cameraView: CameraView = {
@@ -107,8 +108,23 @@ export abstract class Ship extends Entity {
     }
 
     protected onDestroyed() {
-        // 触发爆炸逻辑
+        // 触发爆炸逻辑：生成爆炸粒子并加入场景，然后把自己从场景中移除
         Debug.log(LogChannel.GameLogic, `${this.name} was destroyed!`);
+
+        try {
+            const scene = this.game.getScene();
+            const exp = new ExplosionEmitter();
+            // 将爆炸发射器置于飞船当前位置
+            vec3.copy(exp.position, this.position);
+            scene.add(exp);
+
+            // 隐藏并移除本体（Scene.remove 会把实体加入 pendingRemove）
+            this.visible = false;
+            this.active = false;
+            scene.remove(this);
+        } catch (e) {
+            Debug.error(LogChannel.GameLogic, "Failed to spawn explosion", e);
+        }
     }
 
     public getCameraViewConfig(): CameraView {

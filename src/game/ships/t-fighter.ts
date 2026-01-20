@@ -10,6 +10,10 @@ export class TFighter extends Ship {
     protected maxAngularSpeed: number = 10.0;  // [rad/s]
     protected maxAngularAcceleration: vec3 = vec3.fromValues(10, 10, 10);  // [rad/s²] 每个轴的最大角加速度[pitch, yaw, roll]
 
+    public maxHealth: number = 20;
+    public health: number = 20;
+    public shield: number = 10;
+
     // 碰撞半径（球形）
     public hitRadius: number = 8.0;
 
