@@ -1,5 +1,5 @@
 import type { Renderer } from "./Renderer";
-import { Scene } from "../scene/Scene";
+import { Scene } from "@scene";
 
 export class TextRenderer implements Renderer {
   init() {}

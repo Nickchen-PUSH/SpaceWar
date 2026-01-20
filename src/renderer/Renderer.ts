@@ -1,4 +1,4 @@
-import { Scene } from "../scene/Scene";
+import { Scene } from "@scene";
 import { UIManager } from "../ui/UIManager";
 
 export interface Renderer {

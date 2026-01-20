@@ -1,9 +1,9 @@
 // src/game/FreeCameraController.ts
 import { vec3, quat } from "gl-matrix";
 import { Game } from "../../core/Game";
-import { Entity } from "../../scene/Entity";
+import { Entity } from "@scene";
 import { Debug, LogChannel } from "../../core/Debug";
-import type { Camera } from "scene";
+import type { Camera } from "@scene";
 
 export class FreeCameraController {
     private camera: Camera;

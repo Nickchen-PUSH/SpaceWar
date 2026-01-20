@@ -1,6 +1,6 @@
 import { Time } from "./Time";
 import { Input } from "./Input";
-import { Scene } from "../scene/Scene";
+import { Scene } from "@scene";
 import { LevelManager } from "./LevelManager";
 import type { Renderer } from "../renderer/Renderer"; // 使用 type 避免运行时依赖
 import type { AssetLoader } from "./AssetLoader";
@@ -139,6 +139,9 @@ export class Game {
     // 3. 更新物理/世界 (Physics / World)
     // Scene 负责驱动所有实体的移动、动画、矩阵更新
     this.scene.update(this.time.delta);
+
+    // 3.5 场景后置逻辑（如碰撞检测）
+    this.levelManager.postUpdate(this.time.delta);
 
     // 4. 渲染 (Rendering)
     // Renderer 读取 Scene 数据并绘制一帧

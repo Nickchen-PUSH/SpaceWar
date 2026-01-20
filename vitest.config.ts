@@ -1,7 +1,22 @@
 // vitest.config.ts
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+const rootDir = dirname(fileURLToPath(import.meta.url));
+const srcDir = resolve(rootDir, "src");
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      "@core": resolve(srcDir, "core"),
+      "@game": resolve(srcDir, "game"),
+      "@render": resolve(srcDir, "render"),
+      "@types": resolve(srcDir, "types"),
+      "@scene": resolve(srcDir, "scene"),
+      "scene": resolve(srcDir, "scene"),
+    },
+  },
   test: {
     // 1. 模拟浏览器环境 (让 globalThis.window 可用)
     // 需要安装: npm install -D jsdom

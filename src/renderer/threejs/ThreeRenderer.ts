@@ -7,9 +7,9 @@ import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/examples/jsm/postprocessing/UnrealBloomPass.js";
 
 import { AssetLoader } from "../../core/AssetLoader";
-import { Scene } from "../../scene/Scene";
+import { Scene } from "@scene";
 import type { Renderer } from "../Renderer";
-import { Entity } from "../../scene/Entity";
+import { Entity } from "@scene";
 import { TrailParticleEmitter } from "../../game/effects/TrailParticleEmitter";
 import { BulletLaserEmitter } from "../../game/effects/BulletLaserEmitter";
 import { Debug, LogChannel } from "../../core/Debug";

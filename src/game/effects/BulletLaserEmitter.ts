@@ -1,6 +1,6 @@
 import { vec3, quat } from "gl-matrix";
-import { Entity } from "../../scene/Entity";
-import { Bullet } from "../Bullet";
+import { Entity } from "@scene";
+import { Bullet } from "../objects/Bullet";
 import { Debug, LogChannel } from "../../core/Debug";
 
 interface Particle {

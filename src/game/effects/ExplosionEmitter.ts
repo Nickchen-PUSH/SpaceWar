@@ -1,5 +1,5 @@
 import { vec3 } from "gl-matrix";
-import { Entity } from "../../scene/Entity";
+import { Entity } from "@scene";
 
 /**
  * 简单的爆炸粒子发射器（纯 CPU 更新，Renderer 负责绘制 Points + Sprite）

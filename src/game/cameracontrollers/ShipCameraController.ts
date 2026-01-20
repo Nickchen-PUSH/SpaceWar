@@ -1,7 +1,7 @@
 import { vec3, quat, mat4 } from "gl-matrix";
 import { Game } from "../../core/Game";
 import { Ship } from "../ships/Ship";
-import type { Camera } from "../../scene/Camera";
+import type { Camera } from "@scene";
 
 export const CameraMode = {
   FirstPerson: 0,
