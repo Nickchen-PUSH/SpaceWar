@@ -5,9 +5,10 @@ import { dirname, resolve } from "node:path";
 const rootDir = dirname(fileURLToPath(import.meta.url));
 const srcDir = resolve(rootDir, "src");
 
-const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1];
 const isGitHubPagesBuild = process.env.GITHUB_PAGES === "true";
-const base = isGitHubPagesBuild && repoName ? `/${repoName}/` : "/";
+// For GitHub Pages (project pages), using a relative base avoids broken absolute
+// asset URLs like `/assets/...` when the site is served under `/<repo>/`.
+const base = isGitHubPagesBuild ? "./" : "/";
 
 export default defineConfig({
   base,
