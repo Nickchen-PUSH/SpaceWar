@@ -13,7 +13,7 @@ async function bootstrap() {
   // ===========================================
   // 1. 准备资源 (Preload Assets)
   // ===========================================
-  const loader = new AssetLoader();
+  const loader = new AssetLoader(import.meta.env.BASE_URL);
 
   // 注册资源清单
   // 在实际项目中，这些路径通常指向 public/assets 文件夹
